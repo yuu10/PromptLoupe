@@ -1,19 +1,27 @@
+using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using PromptLoupe.Metadata;
 
 namespace PromptLoupe;
 
 /// <summary>
-/// JPEG の EXIF 回転情報(Orientation、タグ 274)を読んで、画像を正しい向きに直す。
+/// JPEG・WebP の EXIF 回転情報(Orientation、タグ 274)を読んで、画像を正しい向きに直す。
+/// HEIC は、デコーダー(WIC)が HEIF の回転情報(irot)で向きを直して返すので、ここでは直さない
+/// (EXIF の値も当てると二重に回ってしまう)。
 /// </summary>
 public static class ExifOrientation
 {
     /// <summary>
-    /// Orientation の値(1〜8)を返す。読めないときや JPEG 以外は 1(そのまま)。
+    /// Orientation の値(1〜8)を返す。読めないときや JPEG・WebP 以外は 1(そのまま)。
     /// frame は、元のストリームが開いているうちに呼ぶこと。
     /// </summary>
-    public static int Read(BitmapFrame frame)
+    public static int Read(BitmapFrame frame, string path)
     {
+        // WebP は WIC からメタデータを読めないことがあるので、ファイルの EXIF チャンクを自前で読む
+        if (Path.GetExtension(path).Equals(".webp", System.StringComparison.OrdinalIgnoreCase))
+            return MetadataReader.ReadExif(path)?.Orientation ?? 1;
+
         try
         {
             if (frame.Metadata is BitmapMetadata md &&

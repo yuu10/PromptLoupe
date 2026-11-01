@@ -131,7 +131,7 @@ public static class ThumbnailService
             var frame = BitmapFrame.Create(fs, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
             w = frame.PixelWidth;
             h = frame.PixelHeight;
-            orientation = ExifOrientation.Read(frame);
+            orientation = ExifOrientation.Read(frame, path);
         }
 
         using var fs2 = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);

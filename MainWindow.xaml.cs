@@ -54,6 +54,7 @@ public partial class MainWindow : Window
         AllowDeleteMenu.IsChecked = settings.AllowDelete;
         ConfirmDeleteMenu.IsChecked = settings.ConfirmDelete;
         TagColorMenu.IsChecked = settings.ColorTags;
+        ShowGpsMenu.IsChecked = settings.ShowGps;
         UpdateTagDictStatus();
         UpdateViewModeButtons();
         ApplyListTemplate();
@@ -392,7 +393,7 @@ public partial class MainWindow : Window
     {
         using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         var orientation = ExifOrientation.Read(
-            BitmapFrame.Create(fs, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None));
+            BitmapFrame.Create(fs, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None), path);
         fs.Position = 0;
 
         var bmp = new BitmapImage();
@@ -401,7 +402,7 @@ public partial class MainWindow : Window
         bmp.StreamSource = fs;
         bmp.EndInit();
         bmp.Freeze();
-        // JPEG の EXIF 回転情報に従って向きを直す
+        // JPEG・WebP の EXIF 回転情報に従って向きを直す
         return ExifOrientation.Apply(bmp, orientation);
     }
 
@@ -429,6 +430,8 @@ public partial class MainWindow : Window
             PromptCard.Visibility = NegativeCard.Visibility = ParamsCard.Visibility = Visibility.Collapsed;
             ParamsList.ItemsSource = OtherParamsList.ItemsSource = null;
             OtherExpander.Visibility = Visibility.Collapsed;
+            ExifList.ItemsSource = null;
+            ExifCard.Visibility = Visibility.Collapsed;
             BuildCharacters(null);
             return;
         }
@@ -451,6 +454,11 @@ public partial class MainWindow : Window
         OtherExpander.Visibility = other.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         BuildCharacters(m);
+
+        var exif = m.Exif?.Rows(settings.ShowGps) ?? new List<KeyValuePair<string, string>>();
+        ExifList.ItemsSource = exif;
+        ExifCard.Visibility = exif.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
         RawBox.Text = string.Join("\n\n", m.Raw.Select(kv => $"[{kv.Key}]\n{kv.Value}"));
     }
 
@@ -469,6 +477,7 @@ public partial class MainWindow : Window
         ("Negative", NegativeBody, NegativeArrow),
         ("Characters", CharactersPanel, CharactersArrow),
         ("Params", ParamsBody, ParamsArrow),
+        ("Exif", ExifList, ExifArrow),
     };
 
     /// <summary>設定に合わせて、各カードの本体の表示/非表示と、矢印(▾ 展開 / ▸ 最小化)を反映する。</summary>
@@ -854,6 +863,13 @@ public partial class MainWindow : Window
         settings.ShowThumbnails = ThumbMenu.IsChecked;
         settings.Save();
         ApplyListTemplate();
+    }
+
+    void ShowGps_Click(object sender, RoutedEventArgs e)
+    {
+        settings.ShowGps = ShowGpsMenu.IsChecked;
+        settings.Save();
+        if (currentItem != null) ShowMeta(currentItem, currentItem.Meta);
     }
 
     /// <summary>サムネイル設定に合わせて、一覧の表示テンプレートを切り替える。</summary>

@@ -25,13 +25,7 @@ public static class MetadataReader
         try
         {
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
-            meta.Raw = Path.GetExtension(path).ToLowerInvariant() switch
-            {
-                ".png" => ReadPng(fs),
-                ".jpg" or ".jpeg" => ReadJpeg(fs),
-                ".webp" => ReadWebp(fs),
-                _ => new Dictionary<string, string>()
-            };
+            meta.Raw = ReadRaw(fs, path, meta);
             Interpret(meta);
         }
         catch (Exception ex)
@@ -40,6 +34,33 @@ public static class MetadataReader
         }
         return meta;
     }
+
+    /// <summary>EXIF の撮影情報だけを読む(回転の補正用)。読めなければ null。</summary>
+    public static ExifInfo? ReadExif(string path)
+    {
+        try
+        {
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var meta = new ImageMetadata();
+            ReadRaw(fs, path, meta);
+            return meta.Exif;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>形式ごとに生のテキストを読む。EXIF があれば m.Exif にも入れる。</summary>
+    static Dictionary<string, string> ReadRaw(Stream fs, string path, ImageMetadata m) =>
+        Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".png" => ReadPng(fs),
+            ".jpg" or ".jpeg" => ReadJpeg(fs, m),
+            ".webp" => ReadWebp(fs, m),
+            ".heic" or ".heif" => ReadHeif(fs, m),
+            _ => new Dictionary<string, string>()
+        };
 
     // ───────────────────────── 解釈 ─────────────────────────
 
@@ -571,7 +592,7 @@ public static class MetadataReader
 
     // ───────────────────────── JPEG ─────────────────────────
 
-    static Dictionary<string, string> ReadJpeg(Stream s)
+    static Dictionary<string, string> ReadJpeg(Stream s, ImageMetadata m)
     {
         var d = new Dictionary<string, string>();
         if (s.ReadByte() != 0xFF || s.ReadByte() != 0xD8) return d;
@@ -597,7 +618,7 @@ public static class MetadataReader
                 var seg = new byte[len];
                 s.ReadExactly(seg);
                 if (marker == 0xE1 && seg.Length > 6 && Encoding.ASCII.GetString(seg, 0, 4) == "Exif")
-                    ParseExif(seg.AsSpan(6).ToArray(), d);
+                    ParseExif(seg.AsSpan(6).ToArray(), d, m);
                 else if (marker == 0xFE)
                     d["JpegComment"] = DecodeText(seg);
             }
@@ -611,7 +632,7 @@ public static class MetadataReader
 
     // ───────────────────────── WebP ─────────────────────────
 
-    static Dictionary<string, string> ReadWebp(Stream s)
+    static Dictionary<string, string> ReadWebp(Stream s, ImageMetadata m)
     {
         var d = new Dictionary<string, string>();
         var head = new byte[12];
@@ -630,7 +651,7 @@ public static class MetadataReader
                 var data = new byte[size];
                 s.ReadExactly(data);
                 int off = data.Length > 6 && Encoding.ASCII.GetString(data, 0, 4) == "Exif" ? 6 : 0;
-                ParseExif(data.AsSpan(off).ToArray(), d);
+                ParseExif(data.AsSpan(off).ToArray(), d, m);
             }
             else
             {
@@ -643,15 +664,26 @@ public static class MetadataReader
 
     // ───────────────────────── EXIF ─────────────────────────
 
-    static void ParseExif(byte[] t, Dictionary<string, string> d)
+    /// <summary>
+    /// TIFF 形式の EXIF を読む。生成AI用のテキスト(UserComment など)は d に、撮影情報は m.Exif に入れる。
+    /// </summary>
+    static void ParseExif(byte[] t, Dictionary<string, string> d, ImageMetadata m)
     {
         if (t.Length < 8) return;
         bool le = t[0] == (byte)'I';
+        var x = m.Exif ??= new ExifInfo();
 
         ushort U16(int o) => le ? BinaryPrimitives.ReadUInt16LittleEndian(t.AsSpan(o)) : BinaryPrimitives.ReadUInt16BigEndian(t.AsSpan(o));
         uint U32(int o) => le ? BinaryPrimitives.ReadUInt32LittleEndian(t.AsSpan(o)) : BinaryPrimitives.ReadUInt32BigEndian(t.AsSpan(o));
 
-        void Ifd(uint off, int depth)
+        // GPS は、IFD を読み終えてから度に直す
+        double? lat = null, lon = null, alt = null;
+        char latRef = 'N', lonRef = 'E';
+        bool altBelow = false;
+
+        const int Ifd0 = 0, ExifIfd = 1, GpsIfd = 2;
+
+        void Ifd(uint off, int kind, int depth)
         {
             if (depth > 2 || off + 2 > t.Length) return;
             int n = U16((int)off);
@@ -663,24 +695,246 @@ public static class MetadataReader
                 ushort tag = U16(e), type = U16(e + 2);
                 uint cnt = U32(e + 4);
 
-                if (tag == 0x8769) { Ifd(U32(e + 8), depth + 1); continue; } // Exif IFD
+                if (kind == Ifd0 && tag == 0x8769) { Ifd(U32(e + 8), ExifIfd, depth + 1); continue; }
+                if (kind == Ifd0 && tag == 0x8825) { Ifd(U32(e + 8), GpsIfd, depth + 1); continue; }
 
-                int unit = type switch { 3 => 2, 4 => 4, 5 => 8, _ => 1 };
+                int unit = type switch { 3 or 8 => 2, 4 or 9 or 11 => 4, 5 or 10 or 12 => 8, _ => 1 };
                 long size = (long)unit * cnt;
                 long vo = size <= 4 ? e + 8 : U32(e + 8);
-                if (vo < 0 || vo + size > t.Length) continue;
+                if (cnt == 0 || vo < 0 || vo + size > t.Length) continue;
 
                 var span = t.AsSpan((int)vo, (int)size);
+                int v = (int)vo;
+
+                // 数値(SHORT / LONG)と分数(RATIONAL / SRATIONAL)。型が違えば null
+                int? Int(int k = 0) => type switch
+                {
+                    1 or 7 when k < cnt => t[v + k],
+                    3 when k < cnt => U16(v + k * 2),
+                    4 when k < cnt => (int)Math.Min(U32(v + k * 4), int.MaxValue),
+                    _ => null,
+                };
+                double? Rat(int k = 0)
+                {
+                    if (type is not (5 or 10) || k >= cnt) return null;
+                    double num = type == 10 ? (int)U32(v + k * 8) : U32(v + k * 8);
+                    double den = type == 10 ? (int)U32(v + k * 8 + 4) : U32(v + k * 8 + 4);
+                    return den == 0 ? null : num / den;
+                }
+                int len = (int)size;
+                string Ascii() => DecodeText(t.AsSpan(v, len)).TrimEnd('\0', ' ');
+
+                if (kind == GpsIfd)
+                {
+                    switch (tag)
+                    {
+                        case 0x0001: if (Ascii() is { Length: > 0 } a1) latRef = char.ToUpperInvariant(a1[0]); break;
+                        case 0x0002: lat = Dms(Rat(0), Rat(1), Rat(2)); break;
+                        case 0x0003: if (Ascii() is { Length: > 0 } a3) lonRef = char.ToUpperInvariant(a3[0]); break;
+                        case 0x0004: lon = Dms(Rat(0), Rat(1), Rat(2)); break;
+                        case 0x0005: altBelow = Int() == 1; break;
+                        case 0x0006: alt = Rat(); break;
+                    }
+                    continue;
+                }
+
                 switch (tag)
                 {
                     case 0x010E: d["ImageDescription"] = DecodeText(span).TrimEnd('\0'); break;
                     case 0x0131: d["Software"] = DecodeText(span).TrimEnd('\0'); break;
                     case 0x9286: d["UserComment"] = DecodeUserComment(span); break;
+
+                    case 0x010F: x.Make = Ascii(); break;
+                    case 0x0110: x.Model = Ascii(); break;
+                    case 0x0112: if (Int() is >= 1 and <= 8 and var o) x.Orientation = o; break;
+                    case 0x0132: x.DateTaken ??= ParseExifDate(Ascii()); break;            // DateTime(変更日時。撮影日時が無いときの代わり)
+                    case 0x9003: x.DateTaken = ParseExifDate(Ascii()) ?? x.DateTaken; break; // DateTimeOriginal
+                    case 0x829A: x.ExposureTime = Rat(); break;
+                    case 0x829D: x.FNumber = Rat(); break;
+                    case 0x8822: x.ExposureProgram = Int(); break;
+                    case 0x8827: x.Iso = Int(); break;
+                    case 0x9204: x.ExposureBias = Rat(); break;
+                    case 0x9209: x.Flash = Int(); break;
+                    case 0x920A: x.FocalLength = Rat(); break;
+                    case 0xA403: x.WhiteBalance = Int(); break;
+                    case 0xA405: x.FocalLength35 = Int(); break;
+                    case 0xA433: x.LensMake = Ascii(); break;
+                    case 0xA434: x.LensModel = Ascii(); break;
                 }
             }
         }
 
-        Ifd(U32(4), 0);
+        Ifd(U32(4), Ifd0, 0);
+
+        if (lat != null && lon != null && !(lat == 0 && lon == 0))
+        {
+            x.Latitude = latRef == 'S' ? -lat : lat;
+            x.Longitude = lonRef == 'W' ? -lon : lon;
+            x.Altitude = alt == null ? null : altBelow ? -alt : alt;
+        }
+    }
+
+    static double? Dms(double? deg, double? min, double? sec) =>
+        deg == null ? null : deg + (min ?? 0) / 60 + (sec ?? 0) / 3600;
+
+    /// <summary>EXIF の日時("yyyy:MM:dd HH:mm:ss")を読む。空欄("    :  :  ")や壊れた値は null。</summary>
+    static DateTime? ParseExifDate(string s) =>
+        DateTime.TryParseExact(s.Trim(), new[] { "yyyy:MM:dd HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "yyyy:MM:dd" },
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) ? dt : null;
+
+    // ───────────────────────── HEIC / HEIF ─────────────────────────
+
+    /// <summary>
+    /// HEIF(ISOBMFF)の meta ボックスから Exif アイテムを探して読む。
+    /// 壊れていても例外にはせず、読めた分だけ返す(画像の表示は WIC に任せている)。
+    /// </summary>
+    static Dictionary<string, string> ReadHeif(Stream s, ImageMetadata m)
+    {
+        var d = new Dictionary<string, string>();
+        try
+        {
+            byte[]? meta = null;
+            var hdr = new byte[16];
+            while (s.Position + 8 <= s.Length)
+            {
+                long start = s.Position;
+                s.ReadExactly(hdr.AsSpan(0, 8));
+                long size = BinaryPrimitives.ReadUInt32BigEndian(hdr);
+                string type = Encoding.ASCII.GetString(hdr, 4, 4);
+                int head = 8;
+                if (size == 1)
+                {
+                    s.ReadExactly(hdr.AsSpan(8, 8));
+                    size = (long)BinaryPrimitives.ReadUInt64BigEndian(hdr.AsSpan(8));
+                    head = 16;
+                }
+                else if (size == 0) size = s.Length - start;
+                if (size < head) break;
+
+                if (type == "meta")
+                {
+                    if (size - head > MaxChunk) break;
+                    meta = new byte[size - head];
+                    s.ReadExactly(meta);
+                    break;
+                }
+                s.Position = start + size;
+            }
+            if (meta == null || meta.Length < 4) return d;
+
+            // meta はフルボックス(先頭 4 バイトが version と flags)
+            long exifId = -1;
+            var locations = new Dictionary<long, (int Method, List<(long Off, long Len)> Extents)>();
+            foreach (var (type, bs, be) in Boxes(meta, 4, meta.Length))
+            {
+                if (type == "iinf") ReadIinf(meta, bs, be, ref exifId);
+                else if (type == "iloc") ReadIloc(meta, bs, locations);
+            }
+            if (exifId < 0 || !locations.TryGetValue(exifId, out var loc) || loc.Method != 0) return d;
+
+            long total = loc.Extents.Sum(x => x.Len);
+            if (total <= 4 || total > MaxChunk) return d;
+            var data = new byte[total];
+            int p = 0;
+            foreach (var (off, len) in loc.Extents)
+            {
+                s.Position = off;
+                s.ReadExactly(data.AsSpan(p, (int)len));
+                p += (int)len;
+            }
+
+            // Exif アイテムの先頭 4 バイトは、TIFF ヘッダーまでのオフセット
+            long tiff = 4 + BinaryPrimitives.ReadUInt32BigEndian(data);
+            if (tiff + 6 <= data.Length && Encoding.ASCII.GetString(data, (int)tiff, 4) == "Exif") tiff += 6;
+            if (tiff + 8 <= data.Length) ParseExif(data.AsSpan((int)tiff).ToArray(), d, m);
+        }
+        catch
+        {
+            // 壊れた HEIF は、メタデータなしとして扱う
+        }
+        return d;
+    }
+
+    /// <summary>ISOBMFF のボックスを順に返す(種類と、中身の範囲)。</summary>
+    static IEnumerable<(string Type, int Start, int End)> Boxes(byte[] b, int pos, int end)
+    {
+        while (pos + 8 <= end)
+        {
+            long size = BinaryPrimitives.ReadUInt32BigEndian(b.AsSpan(pos));
+            string type = Encoding.ASCII.GetString(b, pos + 4, 4);
+            int head = 8;
+            if (size == 1)
+            {
+                if (pos + 16 > end) yield break;
+                size = (long)BinaryPrimitives.ReadUInt64BigEndian(b.AsSpan(pos + 8));
+                head = 16;
+            }
+            else if (size == 0) size = end - pos;
+            if (size < head || pos + size > end) yield break;
+            yield return (type, pos + head, (int)(pos + size));
+            pos += (int)size;
+        }
+    }
+
+    /// <summary>iinf(アイテムの一覧)から、種類が Exif のアイテムの ID を探す。</summary>
+    static void ReadIinf(byte[] b, int start, int end, ref long exifId)
+    {
+        int ver = b[start];
+        int pos = start + 4 + (ver == 0 ? 2 : 4); // フルボックスのヘッダーと、項目数
+        foreach (var (type, bs, _) in Boxes(b, pos, end))
+        {
+            if (type != "infe") continue;
+            int iv = b[bs];
+            if (iv < 2) continue;
+            int p = bs + 4;
+            long id = iv == 2 ? BinaryPrimitives.ReadUInt16BigEndian(b.AsSpan(p)) : BinaryPrimitives.ReadUInt32BigEndian(b.AsSpan(p));
+            p += (iv == 2 ? 2 : 4) + 2; // item_ID と item_protection_index
+            if (Encoding.ASCII.GetString(b, p, 4) == "Exif") { exifId = id; return; }
+        }
+    }
+
+    /// <summary>iloc(アイテムの位置)を読む。</summary>
+    static void ReadIloc(byte[] b, int start, Dictionary<long, (int, List<(long, long)>)> result)
+    {
+        int ver = b[start];
+        int p = start + 4;
+        int offSize = b[p] >> 4, lenSize = b[p] & 15, baseSize = b[p + 1] >> 4;
+        int idxSize = ver is 1 or 2 ? b[p + 1] & 15 : 0;
+        p += 2;
+
+        long ReadN(int n)
+        {
+            long v = n switch
+            {
+                0 => 0,
+                4 => BinaryPrimitives.ReadUInt32BigEndian(b.AsSpan(p)),
+                8 => (long)BinaryPrimitives.ReadUInt64BigEndian(b.AsSpan(p)),
+                _ => throw new InvalidDataException("iloc"),
+            };
+            p += n;
+            return v;
+        }
+
+        long count = ver < 2 ? ReadN2() : ReadN(4);
+        int ReadN2() { int v = BinaryPrimitives.ReadUInt16BigEndian(b.AsSpan(p)); p += 2; return v; }
+
+        for (long i = 0; i < count; i++)
+        {
+            long id = ver < 2 ? ReadN2() : ReadN(4);
+            int method = ver is 1 or 2 ? ReadN2() & 15 : 0;
+            ReadN2(); // data_reference_index
+            long baseOff = ReadN(baseSize);
+            int extents = ReadN2();
+            var list = new List<(long, long)>();
+            for (int k = 0; k < extents; k++)
+            {
+                if (idxSize > 0) ReadN(idxSize);
+                long off = ReadN(offSize);
+                long len = ReadN(lenSize);
+                list.Add((baseOff + off, len));
+            }
+            result[id] = (method, list);
+        }
     }
 
     static string DecodeUserComment(ReadOnlySpan<byte> b)

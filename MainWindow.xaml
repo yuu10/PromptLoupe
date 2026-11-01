@@ -151,6 +151,10 @@
                     <MenuItem Header="無制限" Tag="-1" IsCheckable="True" Click="SubfolderDepth_Click" />
                 </MenuItem>
                 <Separator />
+                <MenuItem x:Name="ShowGpsMenu" Header="撮影情報の位置情報(GPS)を表示する(_L)" IsCheckable="True"
+                          Click="ShowGps_Click"
+                          ToolTip="写真に記録された緯度・経度を、撮影情報(Exif)に表示します(既定はオフ)" />
+                <Separator />
                 <MenuItem Header="ファイル操作(_D)">
                     <MenuItem x:Name="AllowDeleteMenu" Header="削除を許可する" IsCheckable="True" Click="AllowDelete_Click"
                               ToolTip="オフのあいだは、削除の操作ができません(誤って消さないための安全装置)" />
@@ -233,6 +237,7 @@
                               SelectionChanged="Sort_Changed">
                         <ComboBoxItem Content="ファイル名" Tag="Name" />
                         <ComboBoxItem Content="更新日時" Tag="Modified" />
+                        <ComboBoxItem Content="撮影日時" Tag="DateTaken" />
                         <ComboBoxItem Content="サイズ" Tag="Size" />
                         <ComboBoxItem Content="モデル" Tag="Model" />
                         <ComboBoxItem Content="サンプラー" Tag="Sampler" />
@@ -417,6 +422,20 @@
                                                   Margin="0,6,0,0" />
                                 </Expander>
                             </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 撮影情報(EXIF。カメラで撮った写真など、該当する画像のみ) -->
+                    <Border x:Name="ExifCard" Style="{StaticResource Card}" Visibility="Collapsed">
+                        <StackPanel>
+                            <Button Style="{StaticResource SectionToggle}" Tag="Exif" Click="Section_Toggle"
+                                    ToolTip="クリックで最小化 / 展開">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="ExifArrow" Text="▾" Style="{StaticResource SectionHeader}" Width="16" />
+                                    <TextBlock Text="撮影情報(Exif)" Style="{StaticResource SectionHeader}" />
+                                </StackPanel>
+                            </Button>
+                            <ItemsControl x:Name="ExifList" ItemTemplate="{StaticResource ParamRow}" Margin="0,6,0,0" />
                         </StackPanel>
                     </Border>
 
