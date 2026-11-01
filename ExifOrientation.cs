@@ -1,7 +1,7 @@
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 /// <summary>
 /// JPEG の EXIF 回転情報(Orientation、タグ 274)を読んで、画像を正しい向きに直す。

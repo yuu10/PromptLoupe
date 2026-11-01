@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 public partial class App : Application
 {

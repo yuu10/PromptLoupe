@@ -10,7 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 // 左パネル(ファイル一覧)のファイル操作: コピー / 切り取り / 貼り付け / 名前の変更 / 削除 / エクスプローラーで開く など。
 // 一覧の右クリックメニューとキー操作から呼ばれる。ドラッグ&ドロップで他のアプリへ持ち出すこともできる。

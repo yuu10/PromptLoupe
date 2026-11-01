@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 /// <summary>ファイル名の変更ダイアログ。拡張子はそのまま残し、名前の部分だけを編集する。</summary>
 public partial class RenameWindow : Window

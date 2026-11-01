@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 /// <summary>使い方マニュアル(内容は HelpWindow.xaml に埋め込み)。</summary>
 public partial class HelpWindow : Window

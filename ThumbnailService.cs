@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 /// <summary>
 /// サムネイルの生成とメモリキャッシュ(ディスクには保存しない)。

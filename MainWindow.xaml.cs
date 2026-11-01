@@ -18,10 +18,10 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
-using MViewer.Metadata;
-using ImageMetadata = MViewer.Metadata.ImageMetadata; // System.Windows.Media.ImageMetadata との曖昧さ回避
+using PromptLoupe.Metadata;
+using ImageMetadata = PromptLoupe.Metadata.ImageMetadata; // System.Windows.Media.ImageMetadata との曖昧さ回避
 
-namespace MViewer;
+namespace PromptLoupe;
 
 public partial class MainWindow : Window
 {
@@ -161,7 +161,7 @@ public partial class MainWindow : Window
 
         SetItems(files);
 
-        Title = $"M Viewer - {folder}" + depth switch
+        Title = $"PromptLoupe - {folder}" + depth switch
         {
             0 => "",
             < 0 => "(サブフォルダ: 無制限)",
@@ -906,10 +906,13 @@ public partial class MainWindow : Window
                          ?? asm.GetName().Version?.ToString() ?? "不明";
         int plus = version.IndexOf('+');
         if (plus >= 0) version = version[..plus];
+        string copyright = asm.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright ?? "";
 
         MessageBox.Show(this,
-            $"M Viewer\nバージョン {version}\n\n" +
+            $"PromptLoupe\nバージョン {version}\n{copyright}(MIT License)\n\n" +
             "AI生成画像のメタデータを元に、並び替え・絞り込みして閲覧できる画像ビューア\n\n" +
+            "使用ライブラリ: ModernWpfUI — Copyright (c) 2019 Yimeng Wu(MIT License)\n" +
+            "ライセンス文は、同梱の LICENSE と THIRD-PARTY-NOTICES.txt にあります。\n\n" +
             $"{RuntimeInformation.FrameworkDescription}",
             "バージョン情報", MessageBoxButton.OK, MessageBoxImage.Information);
     }

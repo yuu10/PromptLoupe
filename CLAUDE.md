@@ -1,7 +1,7 @@
-# M Viewer(Claude Code 用メモ)
+# PromptLoupe(旧名 M Viewer。Claude Code 用メモ)
 
 AI生成画像のメタデータ(プロンプト・パラメーター)を元に、並び替え・絞り込みして閲覧する Windows 用画像ビューア。
-C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `MViewer.csproj` の `<Version>`(現在 1.4.3)。
+C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` の `<Version>`(現在 1.5.0)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
 
 ## 進め方
 
@@ -10,7 +10,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `MViewer.csproj` の 
 - 画面の見た目やドラッグ操作などは、実行しても確認しきれない。ユーザーに確認してもらう項目として、作業の最後に挙げる。
 - 1.4.3(1.4.2 で JPEG の EXIF 回転、1.4.3 で HEIC の表示)まで、ユーザーが「動作は問題なし」と確認済み(2026-11-01)。ただし、左右反転の Orientation(2・4・5・7)は実物の画像がなく未確認。
 - ユーザーが「動いた」と言うまで、「動く」と断言しない。
-- 機能を足したら、`HelpWindow.xaml`(使い方)と `README.md` も更新する。バージョンを上げるときは `MViewer.csproj` の `<Version>` を変える。
+- 機能を足したら、`HelpWindow.xaml`(使い方)と `README.md` も更新する。バージョンを上げるときは `PromptLoupe.csproj` の `<Version>` を変える。
 
 ## ファイル構成
 
@@ -21,7 +21,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `MViewer.csproj` の 
 | `FileItem.cs` | 一覧の項目、検索用の正規化済み文字列、並び替え(自然順は `StrCmpLogicalW`) |
 | `ThumbnailService.cs` | サムネイルのメモリキャッシュ(LRU 600 枚、ディスクには保存しない) |
 | `ExifOrientation.cs` | JPEG の EXIF 回転(Orientation)の読み取りと補正。表示(`MainWindow.Decode`)とサムネイルの両方で使う |
-| `AppSettings.cs` | 設定(`%AppData%\MViewer\settings.json`) |
+| `AppSettings.cs` | 設定(`%AppData%\PromptLoupe\settings.json`)。`DataDir` が初回に旧名の `%AppData%\MViewer` の中身をコピーして引き継ぐ(旧フォルダは消さない) |
 | `MainWindow.xaml` / `.cs` | 画面、閲覧、絞り込み、メタデータ表示、ズーム |
 | `MainWindow.FileOps.cs` | 左パネルのファイル操作と、一覧からのドラッグ持ち出し |
 | `MainWindow.Fullscreen.cs` | 全画面表示(F11 / Esc) |
@@ -32,7 +32,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `MViewer.csproj` の 
 
 ## 守ること・落とし穴
 
-- `ImageMetadata` は WPF の `System.Windows.Media.ImageMetadata` と名前が衝突する。`MainWindow.xaml.cs` では `using ImageMetadata = MViewer.Metadata.ImageMetadata;` で解決している。`System.Windows.Media` を使う partial ファイルでは、`ImageMetadata` を直接書かない。
+- `ImageMetadata` は WPF の `System.Windows.Media.ImageMetadata` と名前が衝突する。`MainWindow.xaml.cs` では `using ImageMetadata = PromptLoupe.Metadata.ImageMetadata;` で解決している。`System.Windows.Media` を使う partial ファイルでは、`ImageMetadata` を直接書かない。
 - `ListCollectionView.DeferRefresh()` の最中は、元のコレクションを変更できない。フォルダを開くたびに新しい `ObservableCollection` と `ListCollectionView` を作る(`SetItems`)。
 - 自作の `TextBox` スタイル(`PlainText`)は、文字色をテーマのブラシで指定しないと、ダークでも黒になる。
 - **一覧は複数選択**(`SelectionMode="Extended"`)。表示中の1枚は `currentItem` で管理し、`SelectedItem` は使わない。項目をまとめて取り除くときは `suppressSelection` と `RemoveItems` を使う。削除や名前変更のあとは、`FocusSelectedListItem` でフォーカスを新しい項目に移す(↑↓キーが先頭から始まるのを防ぐ)。
@@ -45,11 +45,10 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `MViewer.csproj` の 
 
 ## 既知の制限・未対応
 
-- PixAI の専用読み取りは未対応(画像の「生のメタデータ」を見せてもらってから)。GIF は先頭フレームのみ。EXIF 回転は JPEG のみ対応(1.4.2、WebP・TIFF・HEIC は未対応。HEIC は自前で補正していないが、縦向きの写真が縦で出ることをユーザーが確認済み(2026-11-01))。
+- PixAI は対応しない。ダウンロードした PNG・WebP にメタデータが一切入っていない(PNG は IHDR・IDAT・IEND のみ。2026-11-01 に実物で確認、ユーザーも Web で同じ情報を確認)。GIF は先頭フレームのみ。EXIF 回転は JPEG のみ対応(1.4.2、WebP・TIFF・HEIC は未対応。HEIC は自前で補正していないが、縦向きの写真が縦で出ることをユーザーが確認済み(2026-11-01))。
 - 見送り: 虫眼鏡(部分拡大)、サムネイルのグリッド表示(仮想化パネルが必要)。
 
 ## 次にやること(候補)
 
-1. PixAI 対応。
-2. Mac 版(Avalonia UI)。メタデータ読み取りと設定は共通化できる。
-3. 配布の準備(`LICENSE`、名前の商標確認、ModernWpfUI のライセンス表示、署名)。
+1. Mac 版(Avalonia UI)。メタデータ読み取りと設定は共通化できる。
+2. 配布の準備の残り(署名)。名前は PromptLoupe に決定(Web・GitHub・J-PlatPat で同名なし、2026-11-01 確認。法的な確認ではない)。`LICENSE`(MIT、著作権者 yuto)と `THIRD-PARTY-NOTICES.txt`(ModernWpfUI)は追加済みで、バージョン情報と使い方にも表示している。アイコン(`app.ico`)は Claude で生成したもの。

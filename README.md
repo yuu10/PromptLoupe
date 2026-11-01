@@ -1,6 +1,8 @@
-# M Viewer
+# PromptLoupe
 
 AI生成画像のメタデータを読み取り、それを元に並び替え・絞り込みしながら閲覧できる Windows 用画像ビューア(C# / WPF / .NET 8)。
+
+1.4.3 までは「M Viewer」という名前でした(1.5.0 で改名)。設定とタグ辞書の保存先も `%AppData%\MViewer` から `%AppData%\PromptLoupe` に変わり、初めて起動したときに以前の保存先から引き継ぎます(以前の保存先は消しません)。
 
 ## ビルドと実行
 
@@ -24,10 +26,10 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 - メタデータ読み取り: Stable Diffusion WebUI(A1111/Forge)、ComfyUI、NovelAI、InvokeAI
   - PNG の tEXt / iTXt / zTXt、JPEG・WebP の EXIF UserComment
   - 上記以外のツールでも、`prompt` / `negative_prompt` / `seed` などの一般的な名前の項目を持つ JSON なら、汎用的に読み取る(「不明なツール(JSON: …)」と表示)
-  - PixAI 専用の読み取りは未対応(形式が公開情報では確認できず、ダウンロード画像にプロンプトが入っていない場合もあるため。実際の画像の「生のメタデータ」が分かれば対応可能)
-- サブフォルダ読み込み: メニュー「設定 → サブフォルダの読み込み」で深さを選択(含めない / 1〜3階層まで / 無制限。既定は含めない、設定は `%AppData%\MViewer\settings.json` に保存)
+  - PixAI は非対応(ダウンロードした画像にプロンプトなどの情報が入っていないため)
+- サブフォルダ読み込み: メニュー「設定 → サブフォルダの読み込み」で深さを選択(含めない / 1〜3階層まで / 無制限。既定は含めない、設定は `%AppData%\PromptLoupe\settings.json` に保存)
 - サムネイル: ファイル一覧に表示(メニュー「設定 → サムネイルを表示」でON/OFF)。画面に見えている分だけバックグラウンドで生成し、メモリ上にのみ保持(最大600枚、ディスクには保存しません)
-- バージョン情報: メニュー「ヘルプ → バージョン情報」(バージョンは `MViewer.csproj` の `<Version>` で管理)
+- バージョン情報: メニュー「ヘルプ → バージョン情報」(バージョンは `PromptLoupe.csproj` の `<Version>` で管理)
 - 並び替え: ファイル名(自然順)・更新日時・サイズ・モデル・サンプラー・ステップ数・CFG
 - 絞り込み: ファイル名・プロンプト・ネガティブプロンプト・キャラクター別プロンプト・キャラクター別ネガティブ・モデル名(カンマ区切りでAND。例: `blue hair, 1girl`。検索対象は「検索対象」ボタンで選択)
   - スペースと `_` は同じ扱い(`hatsune miku` = `hatsune_miku`)、`\` のエスケープは無視、大文字小文字は区別しない
@@ -44,7 +46,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
   - 削除は初期設定では無効。「設定 → ファイル操作 → 削除を許可する」でオンにする。「削除の前に確認する」も設定で切り替え(既定はオン)
   - 一覧の画像を、エクスプローラーや他のアプリへドラッグ&ドロップで持ち出せる(既定はコピー、Shift を押しながらで移動)。外からのドロップは、従来どおりそのファイル/フォルダを開く
 - 全画面表示(F11 / メニュー「表示」/ 画像右下のボタン。Esc で戻る)
-- タグの色分け: Danbooru のタグ辞書(`danbooru.csv`、利用者が用意)で、一般 / アーティスト / 作品名 / キャラクター名 / メタ を色分け。`<lora:…>` などは辞書なしで色分け。メニュー「設定 → タグの色分け」で辞書を読み込む(`%AppData%\MViewer\danbooru.csv` に保存。アプリには同梱しない)
+- タグの色分け: Danbooru のタグ辞書(`danbooru.csv`、利用者が用意)で、一般 / アーティスト / 作品名 / キャラクター名 / メタ を色分け。`<lora:…>` などは辞書なしで色分け。メニュー「設定 → タグの色分け」で辞書を読み込む(`%AppData%\PromptLoupe\danbooru.csv` に保存。アプリには同梱しない)
 - タグの集計(メニュー「表示 → タグの集計」/ Ctrl+T): タグごとに、使っている画像の枚数と割合を一覧にする
   - 集計するプロンプト(プロンプト / ネガティブ / キャラクター別)、範囲(一覧に表示中の画像 / フォルダのすべて)を選択。列の見出しのクリックで並び替え(もう一度で昇順/降順を切り替え)。条件は保存
   - ダブルクリックか Enter で絞り込みに追加/解除。範囲が「表示中」なら、絞り込みに合わせて自動で集計し直す
@@ -82,12 +84,17 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 - `MainWindow.xaml(.cs)` — UI
 - `HelpWindow.xaml(.cs)` — 使い方マニュアル
 
-## 使用ライブラリとライセンス
+## ライセンス
 
-- [ModernWpfUI](https://github.com/Kinnara/ModernWpf)(MIT License)— 画面のデザイン
+PromptLoupe は [MIT License](LICENSE) で配布しています(Copyright (c) 2026 yuto)。
+
+### 使用ライブラリ
+
+- [ModernWpfUI](https://github.com/Kinnara/ModernWpf)(MIT License、Copyright (c) 2019 Yimeng Wu)— 画面のデザイン
 - .NET / WPF(MIT License)
 
-配布するときは、ModernWpfUI の著作権表示とライセンス文(MIT)を同梱してください。
+ModernWpfUI のライセンス文は [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) にあります。
+`LICENSE` と `THIRD-PARTY-NOTICES.txt` は、ビルド・発行のたびに出力先へコピーされます。配布するときは、この2つを exe と一緒に入れてください。
 
 ## 既知の制限
 

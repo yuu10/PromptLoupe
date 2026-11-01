@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace MViewer.Metadata;
+namespace PromptLoupe.Metadata;
 
 /// <summary>
 /// PNG / JPEG / WebP から生成AIのメタデータを読み取る。

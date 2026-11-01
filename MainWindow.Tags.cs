@@ -6,7 +6,7 @@ using System.Windows;
 using System.Windows.Media;
 using Microsoft.Win32;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 /// <summary>チップの色(文字・背景・マウスを乗せたときの背景)と、分類の名前。</summary>
 readonly record struct ChipStyle(Color Fg, Color Bg, Color BgHover, string Label);

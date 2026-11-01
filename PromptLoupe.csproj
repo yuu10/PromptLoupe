@@ -6,15 +6,23 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <AssemblyName>MViewer</AssemblyName>
-    <RootNamespace>MViewer</RootNamespace>
+    <AssemblyName>PromptLoupe</AssemblyName>
+    <RootNamespace>PromptLoupe</RootNamespace>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.4.3</Version>
-    <Product>M Viewer</Product>
+    <Version>1.5.0</Version>
+    <Product>PromptLoupe</Product>
+    <Authors>yuto</Authors>
+    <Copyright>Copyright (c) 2026 yuto</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
     <Resource Include="app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 配布物に同梱するライセンス文(ビルド・発行の出力先にコピーする) -->
+    <None Include="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
