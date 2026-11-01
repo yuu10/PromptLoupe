@@ -347,6 +347,7 @@
             <List MarkerStyle="Disc">
                 <ListItem><Paragraph><Bold>WebP が表示されない</Bold> — Windows の「WebP 画像拡張機能」が必要です(メタデータの読み取りには不要)。</Paragraph></ListItem>
                 <ListItem><Paragraph><Bold>HEIC が表示されない</Bold> — Microsoft Store の「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」の両方が必要です。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>HEIC のプロンプトが出ない</Bold> — HEIC は表示だけに対応しています。プロンプトなどのメタデータは読み取りません(PNG / JPEG / WebP のみ)。</Paragraph></ListItem>
                 <ListItem><Paragraph><Bold>GIF が動かない</Bold> — アニメーションは先頭のフレームだけ表示します。</Paragraph></ListItem>
                 <ListItem><Paragraph><Bold>絞り込んでも何も出ない</Bold> — 「検索対象」のチェックと、カンマ区切りになっているかを確認してください。メタデータの読み込み中のこともあります。</Paragraph></ListItem>
                 <ListItem><Paragraph><Bold>削除できない</Bold> — 初期設定では削除が無効です。メニュー「設定 → ファイル操作 → 削除を許可する」をオンにしてください。</Paragraph></ListItem>
