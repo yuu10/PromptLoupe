@@ -45,11 +45,6 @@
                     <Setter Property="Margin" Value="0,2,0,6" />
                     <Setter Property="MarkerOffset" Value="14" />
                 </Style>
-                <Style TargetType="TableCell">
-                    <Setter Property="Padding" Value="8,4" />
-                    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
-                    <Setter Property="BorderThickness" Value="0.5" />
-                </Style>
             </FlowDocument.Resources>
 
             <Paragraph Style="{StaticResource H1}">PromptLoupe 使い方</Paragraph>
@@ -76,78 +71,23 @@
 
             <!-- ───────────── 閲覧 ───────────── -->
             <Paragraph Style="{StaticResource H2}">2. 画像を見る</Paragraph>
-            <Table CellSpacing="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0.5">
-                <Table.Columns>
-                    <TableColumn Width="200" />
-                    <TableColumn Width="*" />
-                </Table.Columns>
-                <TableRowGroup>
-                    <TableRow Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
-                        <TableCell><Paragraph FontWeight="Bold">操作</Paragraph></TableCell>
-                        <TableCell><Paragraph FontWeight="Bold">動作</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>→ / PageDown / Space</Paragraph></TableCell>
-                        <TableCell><Paragraph>次の画像</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>← / PageUp / Backspace</Paragraph></TableCell>
-                        <TableCell><Paragraph>前の画像</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>Home / End</Paragraph></TableCell>
-                        <TableCell><Paragraph>最初の画像 / 最後の画像</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>F</Paragraph></TableCell>
-                        <TableCell><Paragraph>フィット表示(画面に収める)</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>1</Paragraph></TableCell>
-                        <TableCell><Paragraph>等倍(100%)表示</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>マウスホイール</Paragraph></TableCell>
-                        <TableCell><Paragraph>ポインターの位置を中心に拡大・縮小</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>ドラッグ</Paragraph></TableCell>
-                        <TableCell><Paragraph>画像を移動</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>画像をダブルクリック</Paragraph></TableCell>
-                        <TableCell><Paragraph>手動のズームや移動をやめて、選んでいる表示方式に戻す</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>F11</Paragraph></TableCell>
-                        <TableCell><Paragraph>全画面表示の切り替え(Esc でも戻れます)</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>Ctrl+C / Ctrl+X / Ctrl+V</Paragraph></TableCell>
-                        <TableCell><Paragraph>選んだファイルのコピー / 切り取り / 貼り付け</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>F2</Paragraph></TableCell>
-                        <TableCell><Paragraph>名前の変更</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>Delete</Paragraph></TableCell>
-                        <TableCell><Paragraph>ごみ箱へ移動(設定で許可しているときだけ)</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>Ctrl+Shift+C</Paragraph></TableCell>
-                        <TableCell><Paragraph>ファイルのパスをコピー</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>Ctrl+T</Paragraph></TableCell>
-                        <TableCell><Paragraph>タグの集計を開く</Paragraph></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell><Paragraph>F1</Paragraph></TableCell>
-                        <TableCell><Paragraph>このマニュアルを開く</Paragraph></TableCell>
-                    </TableRow>
-                </TableRowGroup>
-            </Table>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph><Bold>→ / PageDown / Space</Bold> — 次の画像</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>← / PageUp / Backspace</Bold> — 前の画像</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>Home / End</Bold> — 最初の画像 / 最後の画像</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>F</Bold> — フィット表示(画面に収める)</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>1</Bold> — 等倍(100%)表示</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>マウスホイール</Bold> — ポインターの位置を中心に拡大・縮小</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>ドラッグ</Bold> — 画像を移動</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>画像をダブルクリック</Bold> — 手動のズームや移動をやめて、選んでいる表示方式に戻す</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>F11</Bold> — 全画面表示の切り替え(Esc でも戻れます)</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>Ctrl+C / Ctrl+X / Ctrl+V</Bold> — 選んだファイルのコピー / 切り取り / 貼り付け</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>F2</Bold> — 名前の変更</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>Delete</Bold> — ごみ箱へ移動(設定で許可しているときだけ)</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>Ctrl+Shift+C</Bold> — ファイルのパスをコピー</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>Ctrl+T</Bold> — タグの集計を開く</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>F1</Bold> — このマニュアルを開く</Paragraph></ListItem>
+            </List>
             <Paragraph Style="{StaticResource Body}">
                 キー操作は、絞り込み欄や文字を入力できる欄に入力しているときは働きません(入力を優先します)。
                 一覧の項目をクリックしてから使ってください。
@@ -303,6 +243,11 @@
                 上の5つの分類(青・赤・紫・緑・橙)には、<Bold>Danbooru のタグ辞書</Bold>が必要です。
                 辞書は、a1111-sd-webui-tagcomplete などで配布されている <Run Style="{StaticResource Code}" Text="danbooru.csv"/>
                 (1行が「タグ,分類,件数,別名」の形式)を、ご自身で用意してください。アプリには同梱していません。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                現時点では、次の URL の <Run Style="{StaticResource Code}" Text="danbooru.csv"/> をダウンロードして使うことをおすすめします。開いたページで、ファイルの表示欄の右上にある下向き矢印のボタン(「Download raw file」)を押すと保存できます。
+                <LineBreak/><Run Style="{StaticResource Code}" Text="https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/blob/main/tags/danbooru.csv"/>
+                <LineBreak/>同じ場所にある e621.csv や derpibooru.csv などは、分類の番号の意味が違うため、正しく色分けされません。
             </Paragraph>
             <List MarkerStyle="Disc">
                 <ListItem><Paragraph>メニュー「設定 → タグの色分け → タグ辞書(danbooru.csv)を読み込む」で、ファイルを選びます。</Paragraph></ListItem>
