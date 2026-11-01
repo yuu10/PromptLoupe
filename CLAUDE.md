@@ -7,6 +7,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 
 - 回答とコメントは日本語。丁寧で簡潔に。UI の文言も日本語。
 - ビルドは `dotnet build`、実行は `dotnet run`。変更したら**必ずビルドして、エラーがないことを確かめる**。
+- CI は GitHub Actions(`.github/workflows/build.yml`)。main へのプッシュと PR で `dotnet build -c Release` を実行するだけ(テストはない)。Releases への自動配布は、配布するときに足す予定。
 - 画面の見た目やドラッグ操作などは、実行しても確認しきれない。ユーザーに確認してもらう項目として、作業の最後に挙げる。
 - 1.4.3(1.4.2 で JPEG の EXIF 回転、1.4.3 で HEIC の表示)まで、ユーザーが「動作は問題なし」と確認済み(2026-11-01)。ただし、左右反転の Orientation(2・4・5・7)は実物の画像がなく未確認。
 - ユーザーが「動いた」と言うまで、「動く」と断言しない。
