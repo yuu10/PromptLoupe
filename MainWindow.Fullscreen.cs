@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 // 全画面表示(F11 で切り替え、Esc で戻る)。メニュー・パネル・ステータスバーを隠して、画像だけを画面いっぱいに出す。
 public partial class MainWindow

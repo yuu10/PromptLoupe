@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace MViewer.Metadata;
+namespace PromptLoupe.Metadata;
 
 /// <summary>キャラクター別プロンプト(NovelAI V4 / V4.5 など)。</summary>
 public sealed record CharacterPrompt(int Index, string? Prompt, string? Negative, string? Position);

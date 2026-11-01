@@ -5,9 +5,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using MViewer.Metadata;
+using PromptLoupe.Metadata;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 public sealed class FileItem : INotifyPropertyChanged
 {

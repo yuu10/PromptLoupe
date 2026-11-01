@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 /// <summary>
 /// Danbooru 系のタグ辞書(a1111-sd-webui-tagcomplete の danbooru.csv 形式)。
@@ -20,8 +20,7 @@ public sealed class TagDictionary
     public int Count => map.Count;
 
     /// <summary>アプリの保存先にコピーした辞書の場所。</summary>
-    public static string FilePath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MViewer", "danbooru.csv");
+    public static string FilePath => Path.Combine(AppSettings.DataDir, "danbooru.csv");
 
     /// <summary>正規化済みのタグ名の分類を返す。辞書にないときは -1。</summary>
     public int Lookup(string normalizedTag) =>

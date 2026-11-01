@@ -8,7 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 /// <summary>集計の1行(タグ、使われている枚数、割合)。</summary>
 public sealed class TagStatRow

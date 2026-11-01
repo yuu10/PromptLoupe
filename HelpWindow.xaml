@@ -1,9 +1,9 @@
-<Window x:Class="MViewer.HelpWindow"
+<Window x:Class="PromptLoupe.HelpWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.modernwpf.com/2019"
         ui:WindowHelper.UseModernWindowStyle="True"
-        Title="M Viewer - 使い方" Icon="app.ico" Width="760" Height="720" MinWidth="480" MinHeight="360"
+        Title="PromptLoupe - 使い方" Icon="app.ico" Width="760" Height="720" MinWidth="480" MinHeight="360"
         WindowStartupLocation="CenterOwner">
     <FlowDocumentScrollViewer IsToolBarVisible="False" VerticalScrollBarVisibility="Auto">
         <FlowDocument FontFamily="Yu Gothic UI, Meiryo UI, Segoe UI" FontSize="14"
@@ -52,7 +52,7 @@
                 </Style>
             </FlowDocument.Resources>
 
-            <Paragraph Style="{StaticResource H1}">M Viewer 使い方</Paragraph>
+            <Paragraph Style="{StaticResource H1}">PromptLoupe 使い方</Paragraph>
             <Paragraph Style="{StaticResource Lead}">
                 AI生成画像に埋め込まれたメタデータ(プロンプトやパラメーター)を見ながら、並び替え・絞り込みして閲覧する画像ビューアです。
                 このウィンドウは Esc キーで閉じられます。
@@ -267,7 +267,7 @@
                 ふつうはコピーです。<Bold>Shift を押しながらドラッグを始める</Bold>と、移動もできます(移動したファイルは、一覧から消えます)。
             </Paragraph>
             <Paragraph Style="{StaticResource Note}">
-                外から M Viewer にファイルやフォルダをドロップしたときは、「1. 画像を開く」のとおり、それを開きます(コピーはしません)。
+                外から PromptLoupe にファイルやフォルダをドロップしたときは、「1. 画像を開く」のとおり、それを開きます(コピーはしません)。
             </Paragraph>
 
             <!-- ───────────── 全画面 ───────────── -->
@@ -299,7 +299,7 @@
             </Paragraph>
             <List MarkerStyle="Disc">
                 <ListItem><Paragraph>メニュー「設定 → タグの色分け → タグ辞書(danbooru.csv)を読み込む」で、ファイルを選びます。</Paragraph></ListItem>
-                <ListItem><Paragraph>読み込んだ辞書は <Run Style="{StaticResource Code}" Text="%AppData%\MViewer\danbooru.csv"/> にコピーされ、次回からは自動で使われます。</Paragraph></ListItem>
+                <ListItem><Paragraph>読み込んだ辞書は <Run Style="{StaticResource Code}" Text="%AppData%\PromptLoupe\danbooru.csv"/> にコピーされ、次回からは自動で使われます。</Paragraph></ListItem>
                 <ListItem><Paragraph>辞書にないタグは、色が付きません。「色分けする」のチェックで、色分けそのもののオン/オフを切り替えられます。「タグ辞書を外す」で、辞書を使わない状態に戻せます。</Paragraph></ListItem>
                 <ListItem><Paragraph>スペースと <Run Style="{StaticResource Code}" Text="_"/> は同じ扱いで、<Run Style="{StaticResource Code}" Text="artist:名前"/> のように書かれたタグはアーティストとして扱います。</Paragraph></ListItem>
             </List>
@@ -338,8 +338,13 @@
             <Paragraph Style="{StaticResource H2}">11. 設定の保存</Paragraph>
             <Paragraph Style="{StaticResource Body}">
                 テーマ(Windows の設定に合わせる / ダーク / ライト。メニュー「設定 → テーマ」)、サブフォルダの深さ、サムネイルの表示と大きさ、絞り込みの検索対象、フィット/100%の選択、削除に関する設定、タグの色分け、タグの集計の条件は、次回起動時も保持されます。
-                保存先は <Run Style="{StaticResource Code}" Text="%AppData%\MViewer\settings.json"/> です。
+                保存先は <Run Style="{StaticResource Code}" Text="%AppData%\PromptLoupe\settings.json"/> です。
                 このファイルを削除すると、すべて初期設定に戻ります。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Note}">
+                1.4.3 までは「M Viewer」という名前でした。初めて起動したときに、以前の保存先
+                <Run Style="{StaticResource Code}" Text="%AppData%\MViewer"/> の設定とタグ辞書を引き継ぎます。
+                以前の保存先はそのまま残るので、不要なら削除してかまいません。
             </Paragraph>
 
             <!-- ───────────── 困ったとき ───────────── -->
@@ -354,6 +359,19 @@
                 <ListItem><Paragraph><Bold>タグに色が付かない</Bold> — 「設定 → タグの色分け」で「色分けする」がオンか、辞書を読み込んでいるかを確認してください(&lt;lora:…&gt; だけは辞書なしで色が付きます)。</Paragraph></ListItem>
                 <ListItem><Paragraph><Bold>メタデータが一部しか出ない</Bold> — 「生のメタデータ」を開いて、元の文字列に情報が入っているかを確認してください。</Paragraph></ListItem>
             </List>
+
+            <!-- ───────────── ライセンス ───────────── -->
+            <Paragraph Style="{StaticResource H2}">13. ライセンス</Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                PromptLoupe は MIT License で配布しています(Copyright (c) 2026 yuto)。
+                無料で使え、改変や再配布もできます。再配布するときは、著作権表示とライセンス文を残してください。
+                画面のデザインには ModernWpfUI(Copyright (c) 2019 Yimeng Wu、MIT License)を使っています。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Note}">
+                ライセンス文は、アプリと同じフォルダの <Run Style="{StaticResource Code}" Text="LICENSE"/> と
+                <Run Style="{StaticResource Code}" Text="THIRD-PARTY-NOTICES.txt"/> にあります。
+                本ソフトウェアは無保証です。
+            </Paragraph>
         </FlowDocument>
     </FlowDocumentScrollViewer>
 </Window>

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 
-namespace MViewer;
+namespace PromptLoupe;
 
 // タグの集計ウィンドウとの橋渡し。集計そのものは TagStatsWindow が行う。
 public partial class MainWindow
