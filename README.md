@@ -18,6 +18,14 @@ dotnet run
 dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
+## 初めて起動するとき(SmartScreen の警告)
+
+PromptLoupe の exe にはコード署名をしていません。そのため、ダウンロードした exe を初めて開くと、「Windows によって PC が保護されました」という画面が出ることがあります。
+
+起動するには、「詳細情報」をクリックしてから「実行」を押してください。2回目からは表示されません。
+
+ウイルス対策ソフトが誤って警告することもあります。気になる場合は、上の手順でソースコードからビルドしてください。
+
 ## 機能
 
 - 画像表示(PNG / JPEG / WebP / BMP / GIF / TIFF / HEIC)、ホイールでズーム、ドラッグでパン、ダブルクリックでフィット
