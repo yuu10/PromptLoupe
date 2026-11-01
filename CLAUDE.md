@@ -1,7 +1,7 @@
 # PromptLoupe(旧名 M Viewer。Claude Code 用メモ)
 
 AI生成画像のメタデータ(プロンプト・パラメーター)を元に、並び替え・絞り込みして閲覧する Windows 用画像ビューア。
-C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` の `<Version>`(現在 1.5.0)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
+C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` の `<Version>`(現在 1.6.0。1.6.0 で撮影情報(Exif)の表示・撮影日時の並び替え・WebP の EXIF 回転を追加)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
 
 ## 進め方
 
@@ -10,6 +10,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 - CI は GitHub Actions(`.github/workflows/build.yml`)。main へのプッシュと PR で `dotnet build -c Release` を実行するだけ(テストはない)。Releases への自動配布は、配布するときに足す予定。
 - 画面の見た目やドラッグ操作などは、実行しても確認しきれない。ユーザーに確認してもらう項目として、作業の最後に挙げる。
 - 1.4.3(1.4.2 で JPEG の EXIF 回転、1.4.3 で HEIC の表示)まで、ユーザーが「動作は問題なし」と確認済み(2026-11-01)。ただし、左右反転の Orientation(2・4・5・7)は実物の画像がなく未確認。
+- 1.6.0(撮影情報(Exif)カード、GPS の表示設定、撮影日時の並び替え、HEIC の Exif 読み取り)も、ユーザーが「問題なし」と確認済み(2026-11-02)。WebP の EXIF 回転だけは、実物の画像がなく未確認。
 - ユーザーが「動いた」と言うまで、「動く」と断言しない。
 - 機能を足したら、`HelpWindow.xaml`(使い方)と `README.md` も更新する。バージョンを上げるときは `PromptLoupe.csproj` の `<Version>` を変える。
 
@@ -17,11 +18,12 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 
 | ファイル | 役割 |
 |---|---|
-| `Metadata/MetadataReader.cs` | PNG(tEXt / iTXt / zTXt)、JPEG・WebP(EXIF UserComment)の読み取りと、生成ツールごとの解釈 |
+| `Metadata/MetadataReader.cs` | PNG(tEXt / iTXt / zTXt)、JPEG・WebP・HEIC(EXIF)の読み取りと、生成ツールごとの解釈。HEIC は ISOBMFF の meta → iinf / iloc から Exif アイテムを探す |
 | `Metadata/ImageMetadata.cs` | 解釈済みメタデータ |
+| `Metadata/ExifInfo.cs` | EXIF の撮影情報(カメラ・露出・撮影日時・GPS)と、右パネル用の整形。GPS は `ShowGps`(既定オフ)のときだけ座標を出す |
 | `FileItem.cs` | 一覧の項目、検索用の正規化済み文字列、並び替え(自然順は `StrCmpLogicalW`) |
 | `ThumbnailService.cs` | サムネイルのメモリキャッシュ(LRU 600 枚、ディスクには保存しない) |
-| `ExifOrientation.cs` | JPEG の EXIF 回転(Orientation)の読み取りと補正。表示(`MainWindow.Decode`)とサムネイルの両方で使う |
+| `ExifOrientation.cs` | JPEG・WebP の EXIF 回転(Orientation)の読み取りと補正。表示(`MainWindow.Decode`)とサムネイルの両方で使う。WebP は WIC ではなく `MetadataReader.ReadExif` で読む。HEIC は WIC が irot で直すので**回さない**(二重に回る) |
 | `AppSettings.cs` | 設定(`%AppData%\PromptLoupe\settings.json`)。`DataDir` が初回に旧名の `%AppData%\MViewer` の中身をコピーして引き継ぐ(旧フォルダは消さない) |
 | `MainWindow.xaml` / `.cs` | 画面、閲覧、絞り込み、メタデータ表示、ズーム |
 | `MainWindow.FileOps.cs` | 左パネルのファイル操作と、一覧からのドラッグ持ち出し |
@@ -46,7 +48,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 
 ## 既知の制限・未対応
 
-- PixAI は対応しない。ダウンロードした PNG・WebP にメタデータが一切入っていない(PNG は IHDR・IDAT・IEND のみ。2026-11-01 に実物で確認、ユーザーも Web で同じ情報を確認)。GIF は先頭フレームのみ。EXIF 回転は JPEG のみ対応(1.4.2、WebP・TIFF・HEIC は未対応。HEIC は自前で補正していないが、縦向きの写真が縦で出ることをユーザーが確認済み(2026-11-01))。
+- PixAI は対応しない。ダウンロードした PNG・WebP にメタデータが一切入っていない(PNG は IHDR・IDAT・IEND のみ。2026-11-01 に実物で確認、ユーザーも Web で同じ情報を確認)。GIF は先頭フレームのみ。EXIF 回転は JPEG(1.4.2)と WebP(1.6.0、実物では未確認)。TIFF は未対応。HEIC は自前で補正していないが、縦向きの写真が縦で出ることをユーザーが確認済み(2026-11-01)。TIFF の撮影情報(Exif)も未対応。
 - 見送り: 虫眼鏡(部分拡大)、サムネイルのグリッド表示(仮想化パネルが必要)。
 
 ## 次にやること(候補)

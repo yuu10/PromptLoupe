@@ -30,6 +30,9 @@ public sealed class ImageMetadata
     /// <summary>ファイルから読み取った生のテキスト(PNGのtEXt/iTXt、EXIFのUserCommentなど)。</summary>
     public Dictionary<string, string> Raw { get; set; } = new();
 
+    /// <summary>EXIF の撮影情報(JPEG・WebP・HEIC。EXIF が無ければ null)。</summary>
+    public ExifInfo? Exif { get; set; }
+
     public string? Error { get; set; }
 
     public bool HasData => Source != null;

@@ -65,7 +65,7 @@
                 <ListItem><Paragraph>「ファイル → 画像を開く」では、選んだ画像のあるフォルダを開き、その画像を選択した状態にします。</Paragraph></ListItem>
                 <ListItem><Paragraph>フォルダや画像を、ウィンドウにドラッグ＆ドロップしても開けます(ドロップしたファイルやフォルダを開きます)。</Paragraph></ListItem>
                 <ListItem><Paragraph>対応する画像形式は PNG / JPEG / WebP / BMP / GIF / TIFF / HEIC です。</Paragraph></ListItem>
-                <ListItem><Paragraph>スマホやカメラで撮った JPEG は、EXIF の回転情報に従って、正しい向きで表示します(サムネイルも同じ)。</Paragraph></ListItem>
+                <ListItem><Paragraph>スマホやカメラで撮った JPEG・WebP は、EXIF の回転情報に従って、正しい向きで表示します(サムネイルも同じ)。HEIC は、Windows の拡張機能が向きを直して表示します。</Paragraph></ListItem>
             </List>
             <Paragraph Style="{StaticResource Body}">
                 サブフォルダの画像も読み込みたいときは、メニュー「設定 → サブフォルダの読み込み」で深さを選びます
@@ -168,7 +168,8 @@
                 隣のボタンで、<Run Style="{StaticResource Code}" Text="▲ 昇順"/> と <Run Style="{StaticResource Code}" Text="▼ 降順"/> を切り替えます(ボタンに今の向きが表示されます)。
             </Paragraph>
             <List MarkerStyle="Disc">
-                <ListItem><Paragraph>基準: ファイル名(数字を考慮した自然順) / 更新日時 / サイズ / モデル / サンプラー / ステップ数 / CFG</Paragraph></ListItem>
+                <ListItem><Paragraph>基準: ファイル名(数字を考慮した自然順) / 更新日時 / 撮影日時 / サイズ / モデル / サンプラー / ステップ数 / CFG</Paragraph></ListItem>
+                <ListItem><Paragraph>撮影日時は、写真の EXIF に記録された日時です。EXIF に撮影日時がない画像(AI 生成画像など)は、更新日時で代わりに並べます。</Paragraph></ListItem>
                 <ListItem><Paragraph>モデル・サンプラー・ステップ数・CFG で並べるときは、その情報がない画像は、昇順でも降順でも常に最後になります。</Paragraph></ListItem>
                 <ListItem><Paragraph>基準が同じ画像は、ファイル名順になります。</Paragraph></ListItem>
             </List>
@@ -217,12 +218,18 @@
                 <ListItem><Paragraph><Bold>キャラクター別プロンプト</Bold> — NovelAI V4 / V4.5 の、キャラクターごとのプロンプトとネガティブです(該当する画像のみ表示)。人数に制限はありません。</Paragraph></ListItem>
                 <ListItem><Paragraph><Bold>パラメーター</Bold> — モデル、サンプラー、スケジューラー、ステップ数、CFG、シード、サイズなどの主な項目。値の文字は選択してコピーできます。</Paragraph></ListItem>
                 <ListItem><Paragraph><Bold>その他のパラメーター</Bold> — 上に入らなかった項目(折りたたみ)</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>撮影情報(Exif)</Bold> — カメラやスマホで撮った写真(JPEG / WebP / HEIC)に記録された、カメラ、レンズ、撮影日時、絞り、シャッター速度、ISO 感度、焦点距離、露出補正などです(該当する画像のみ表示)。</Paragraph></ListItem>
                 <ListItem><Paragraph><Bold>生のメタデータ</Bold> — 画像に入っていた元の文字列(折りたたみ)。うまく読めない画像を調べるときに使います。</Paragraph></ListItem>
             </List>
             <Paragraph Style="{StaticResource Body}">
                 <Bold>カードの最小化。</Bold>
-                プロンプト、ネガティブプロンプト、キャラクター別プロンプト、パラメーターの各カードは、見出し(▾ の付いた行)をクリックすると、最小化できます(▸ になります)。もう一度クリックすると、元に戻ります。
+                プロンプト、ネガティブプロンプト、キャラクター別プロンプト、パラメーター、撮影情報の各カードは、見出し(▾ の付いた行)をクリックすると、最小化できます(▸ になります)。もう一度クリックすると、元に戻ります。
                 最小化の状態は保存され、次回起動時や、別の画像に切り替えたあとも保たれます。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                <Bold>位置情報(GPS)。</Bold>
+                写真に撮影場所の緯度・経度が記録されていても、初期設定では表示せず、「記録あり」とだけ出します(画面を人に見せるときに、場所が分からないように)。
+                メニュー「設定 → 撮影情報の位置情報(GPS)を表示する」をオンにすると、緯度・経度と標高を表示します。
             </Paragraph>
             <Paragraph Style="{StaticResource Body}">
                 キャラクターの見出しの <Run Style="{StaticResource Code}" Text="[C3 (x=0.5, y=0.5)]"/> は、そのキャラクターの配置の指定です。

@@ -119,6 +119,9 @@ public sealed class FileItem : INotifyPropertyChanged
         }
     }
 
+    /// <summary>撮影日時(EXIF)。無ければ更新日時で代用する。</summary>
+    public DateTime DateTaken => Meta?.Exif?.DateTaken ?? Modified;
+
     public string? Model => Meta?.Model;
     public string? Sampler => Meta?.Sampler;
     public int? Steps => Meta?.Steps;
@@ -160,6 +163,7 @@ public sealed class FileItemComparer : IComparer
         return key switch
         {
             "Modified" => f.Modified,
+            "DateTaken" => f.DateTaken,
             "Size" => f.Size,
             "Model" => string.IsNullOrEmpty(f.Model) ? null : f.Model,
             "Sampler" => string.IsNullOrEmpty(f.Sampler) ? null : f.Sampler,

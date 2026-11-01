@@ -20,7 +20,7 @@ public sealed class AppSettings
     /// <summary>一覧のサムネイルの大きさ(ピクセル)。48 / 64 / 96。</summary>
     public int ThumbnailSize { get; set; } = 64;
 
-    /// <summary>最小化している右パネルのカード("Prompt" / "Negative" / "Characters" / "Params")。</summary>
+    /// <summary>最小化している右パネルのカード("Prompt" / "Negative" / "Characters" / "Params" / "Exif")。</summary>
     public List<string> CollapsedSections { get; set; } = new();
 
     /// <summary>ファイルの削除を許可する(既定はOFF。OFFのあいだは削除できない)。</summary>
@@ -31,6 +31,9 @@ public sealed class AppSettings
 
     /// <summary>プロンプトのタグを、タグ辞書(Danbooru)と形で色分けする。</summary>
     public bool ColorTags { get; set; } = true;
+
+    /// <summary>撮影情報(Exif)に GPS の位置情報を表示する(既定はOFF。個人情報なので、オフのときは「記録あり」とだけ出す)。</summary>
+    public bool ShowGps { get; set; } = false;
 
     /// <summary>ファイル一覧にサムネイルを表示する。</summary>
     public bool ShowThumbnails { get; set; } = true;
