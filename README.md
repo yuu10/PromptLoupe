@@ -18,6 +18,8 @@ dotnet run
 dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
+main へのプッシュと PR のたびに、GitHub Actions でビルドが通るかを確かめています(`.github/workflows/build.yml`)。
+
 ## 初めて起動するとき(SmartScreen の警告)
 
 PromptLoupe の exe にはコード署名をしていません。そのため、ダウンロードした exe を初めて開くと、「Windows によって PC が保護されました」という画面が出ることがあります。
