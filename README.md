@@ -18,7 +18,8 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 
 ## 機能
 
-- 画像表示(PNG / JPEG / WebP / BMP / GIF / TIFF)、ホイールでズーム、ドラッグでパン、ダブルクリックでフィット
+- 画像表示(PNG / JPEG / WebP / BMP / GIF / TIFF / HEIC)、ホイールでズーム、ドラッグでパン、ダブルクリックでフィット
+  - JPEG は EXIF の回転情報(Orientation)に従って、正しい向きで表示する(サムネイルも同じ)
 - フォルダ内閲覧(←→ / PageUp・PageDown / Home・End)、ドラッグ&ドロップ、コマンドライン引数、「このアプリで開く」に対応
 - メタデータ読み取り: Stable Diffusion WebUI(A1111/Forge)、ComfyUI、NovelAI、InvokeAI
   - PNG の tEXt / iTXt / zTXt、JPEG・WebP の EXIF UserComment
@@ -71,6 +72,7 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 - `Metadata/ImageMetadata.cs` — 解釈済みメタデータのモデル
 - `FileItem.cs` — 一覧の項目と並び替え用コンパレーター、検索用の正規化
 - `ThumbnailService.cs` — サムネイルの生成とメモリキャッシュ
+- `ExifOrientation.cs` — JPEG の EXIF 回転情報の読み取りと、向きの補正
 - `AppSettings.cs` — 設定の保存
 - `MainWindow.FileOps.cs` — ファイル操作とドラッグ&ドロップ(持ち出し)
 - `MainWindow.Fullscreen.cs` — 全画面表示
@@ -90,6 +92,6 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 ## 既知の制限
 
 - WebP の表示には Windows の「WebP 画像拡張機能」が必要です(メタデータ読み取りは不要)
+- HEIC の表示には Windows の「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」が必要です。HEIC の EXIF 回転情報と、AI 生成メタデータの読み取りは未対応
 - GIF アニメーションは先頭フレームのみ表示
-- JPEG の EXIF 回転情報は未対応
 - サムネイルのグリッド表示は未対応(標準の WrapPanel は大量の画像で重くなるため)

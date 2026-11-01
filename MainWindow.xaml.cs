@@ -25,7 +25,7 @@ namespace MViewer;
 
 public partial class MainWindow : Window
 {
-    static readonly string[] ImageExts = { ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".tif", ".tiff" };
+    static readonly string[] ImageExts = { ".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".tif", ".tiff", ".heic", ".heif" };
 
     ObservableCollection<FileItem> items = new();
     readonly AppSettings settings = AppSettings.Load();
@@ -376,20 +376,33 @@ public partial class MainWindow : Window
             UpdateZoomText();
             EmptyPanel.Visibility = Visibility.Visible;
             Placeholder.Text = "画像を表示できません";
-            Status.Text = $"読み込み失敗: {ex.Message}(WebPはWindowsのWebP拡張機能が必要です)";
+            Status.Text = $"読み込み失敗: {ex.Message}{CodecHint(path)}";
         }
     }
+
+    /// <summary>表示に Windows の拡張機能が必要な形式なら、その案内を返す</summary>
+    static string CodecHint(string path) => Path.GetExtension(path).ToLowerInvariant() switch
+    {
+        ".webp" => "(WebP は Windows の「WebP 画像拡張機能」が必要です)",
+        ".heic" or ".heif" => "(HEIC は Windows の「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」が必要です)",
+        _ => "",
+    };
 
     static BitmapSource Decode(string path)
     {
         using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        var orientation = ExifOrientation.Read(
+            BitmapFrame.Create(fs, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None));
+        fs.Position = 0;
+
         var bmp = new BitmapImage();
         bmp.BeginInit();
         bmp.CacheOption = BitmapCacheOption.OnLoad;
         bmp.StreamSource = fs;
         bmp.EndInit();
         bmp.Freeze();
-        return bmp;
+        // JPEG の EXIF 回転情報に従って向きを直す
+        return ExifOrientation.Apply(bmp, orientation);
     }
 
     void ClearImage()
@@ -788,7 +801,7 @@ public partial class MainWindow : Window
         var dlg = new OpenFileDialog
         {
             Title = "画像を選択",
-            Filter = "画像ファイル|*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif;*.tif;*.tiff|すべてのファイル|*.*"
+            Filter = "画像ファイル|*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.gif;*.tif;*.tiff;*.heic;*.heif|すべてのファイル|*.*"
         };
         if (dlg.ShowDialog(this) == true) OpenPath(dlg.FileName);
     }

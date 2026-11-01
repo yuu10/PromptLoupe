@@ -1,14 +1,14 @@
 # M Viewer(Claude Code 用メモ)
 
 AI生成画像のメタデータ(プロンプト・パラメーター)を元に、並び替え・絞り込みして閲覧する Windows 用画像ビューア。
-C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `MViewer.csproj` の `<Version>`(現在 1.4.1)。
+C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `MViewer.csproj` の `<Version>`(現在 1.4.3)。
 
 ## 進め方
 
 - 回答とコメントは日本語。丁寧で簡潔に。UI の文言も日本語。
 - ビルドは `dotnet build`、実行は `dotnet run`。変更したら**必ずビルドして、エラーがないことを確かめる**。
 - 画面の見た目やドラッグ操作などは、実行しても確認しきれない。ユーザーに確認してもらう項目として、作業の最後に挙げる。
-- 1.4.1(タグの集計の、見出しクリックでの昇順/降順の並び替え。並び順のコンボボックスは廃止)まで、ユーザーが「動作は問題なし」と確認済み(2026-11-01)。
+- 1.4.3(1.4.2 で JPEG の EXIF 回転、1.4.3 で HEIC の表示)まで、ユーザーが「動作は問題なし」と確認済み(2026-11-01)。ただし、左右反転の Orientation(2・4・5・7)は実物の画像がなく未確認。
 - ユーザーが「動いた」と言うまで、「動く」と断言しない。
 - 機能を足したら、`HelpWindow.xaml`(使い方)と `README.md` も更新する。バージョンを上げるときは `MViewer.csproj` の `<Version>` を変える。
 
@@ -20,6 +20,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `MViewer.csproj` の 
 | `Metadata/ImageMetadata.cs` | 解釈済みメタデータ |
 | `FileItem.cs` | 一覧の項目、検索用の正規化済み文字列、並び替え(自然順は `StrCmpLogicalW`) |
 | `ThumbnailService.cs` | サムネイルのメモリキャッシュ(LRU 600 枚、ディスクには保存しない) |
+| `ExifOrientation.cs` | JPEG の EXIF 回転(Orientation)の読み取りと補正。表示(`MainWindow.Decode`)とサムネイルの両方で使う |
 | `AppSettings.cs` | 設定(`%AppData%\MViewer\settings.json`) |
 | `MainWindow.xaml` / `.cs` | 画面、閲覧、絞り込み、メタデータ表示、ズーム |
 | `MainWindow.FileOps.cs` | 左パネルのファイル操作と、一覧からのドラッグ持ち出し |
@@ -39,12 +40,12 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `MViewer.csproj` の 
 - 外からのドロップは「そのファイル/フォルダを開く」(コピーはしない)。一覧から持ち出すドラッグ中は `draggingOut` で、自分のウィンドウへのドロップを無視する。
 - 全画面は `WindowStyle=None` + `Maximized`。ModernWpfUI のタイトルバーが完全に消えるかは未確認。
 - タグ辞書は、アプリに**同梱しない**(ライセンス未確認)。利用者が読み込む。
-- WebP の表示は、Windows の「WebP 画像拡張機能」に依存する(メタデータの読み取りには不要)。
+- WebP の表示は、Windows の「WebP 画像拡張機能」に依存する(メタデータの読み取りには不要)。HEIC(1.4.3〜)は「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」に依存する。案内文は `CodecHint`。
 - 編集の前には、ファイルを読み直す。
 
 ## 既知の制限・未対応
 
-- PixAI の専用読み取りは未対応(画像の「生のメタデータ」を見せてもらってから)。GIF は先頭フレームのみ。JPEG の EXIF 回転は未対応。
+- PixAI の専用読み取りは未対応(画像の「生のメタデータ」を見せてもらってから)。GIF は先頭フレームのみ。EXIF 回転は JPEG のみ対応(1.4.2、WebP・TIFF・HEIC は未対応。HEIC は自前で補正していないが、縦向きの写真が縦で出ることをユーザーが確認済み(2026-11-01))。
 - 見送り: 虫眼鏡(部分拡大)、サムネイルのグリッド表示(仮想化パネルが必要)。
 
 ## 次にやること(候補)
