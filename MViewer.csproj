@@ -9,7 +9,7 @@
     <AssemblyName>MViewer</AssemblyName>
     <RootNamespace>MViewer</RootNamespace>
     <ApplicationIcon>app.ico</ApplicationIcon>
-    <Version>1.4.1</Version>
+    <Version>1.4.3</Version>
     <Product>M Viewer</Product>
   </PropertyGroup>
 

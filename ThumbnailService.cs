@@ -125,12 +125,13 @@ public static class ThumbnailService
 
     static BitmapSource Decode(string path)
     {
-        int w, h;
+        int w, h, orientation;
         using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
         {
             var frame = BitmapFrame.Create(fs, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
             w = frame.PixelWidth;
             h = frame.PixelHeight;
+            orientation = ExifOrientation.Read(frame);
         }
 
         using var fs2 = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
@@ -143,6 +144,6 @@ public static class ThumbnailService
         else bmp.DecodePixelHeight = Math.Min(Size, h);
         bmp.EndInit();
         bmp.Freeze();
-        return bmp;
+        return ExifOrientation.Apply(bmp, orientation);
     }
 }
