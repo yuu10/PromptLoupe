@@ -1,0 +1,20 @@
+# ビルド成果物
+bin/
+obj/
+publish/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.rsuser
+
+# タグ辞書(ライセンス未確認のため同梱しない)
+danbooru*.csv
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

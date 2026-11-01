@@ -1,0 +1,356 @@
+<Window x:Class="MViewer.HelpWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        Title="M Viewer - 使い方" Icon="app.ico" Width="760" Height="720" MinWidth="480" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
+    <FlowDocumentScrollViewer IsToolBarVisible="False" VerticalScrollBarVisibility="Auto">
+        <FlowDocument FontFamily="Yu Gothic UI, Meiryo UI, Segoe UI" FontSize="14"
+                      Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" PagePadding="24,16,24,24"
+                      ColumnWidth="9999">
+            <FlowDocument.Resources>
+                <Style x:Key="H1" TargetType="Paragraph">
+                    <Setter Property="FontSize" Value="24" />
+                    <Setter Property="FontWeight" Value="Bold" />
+                    <Setter Property="Margin" Value="0,0,0,4" />
+                </Style>
+                <Style x:Key="H2" TargetType="Paragraph">
+                    <Setter Property="FontSize" Value="18" />
+                    <Setter Property="FontWeight" Value="Bold" />
+                    <Setter Property="Margin" Value="0,22,0,6" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+                    <Setter Property="BorderThickness" Value="0,0,0,1" />
+                    <Setter Property="Padding" Value="0,0,0,3" />
+                </Style>
+                <Style x:Key="Lead" TargetType="Paragraph">
+                    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                    <Setter Property="Margin" Value="0,0,0,8" />
+                </Style>
+                <Style x:Key="Body" TargetType="Paragraph">
+                    <Setter Property="Margin" Value="0,4,0,4" />
+                    <Setter Property="LineHeight" Value="22" />
+                </Style>
+                <Style x:Key="Note" TargetType="Paragraph">
+                    <Setter Property="Margin" Value="0,6,0,4" />
+                    <Setter Property="Padding" Value="10,6" />
+                    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
+                    <Setter Property="LineHeight" Value="21" />
+                </Style>
+                <Style x:Key="Code" TargetType="Run">
+                    <Setter Property="FontFamily" Value="Consolas, Yu Gothic UI" />
+                    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+                </Style>
+                <Style TargetType="List">
+                    <Setter Property="Margin" Value="0,2,0,6" />
+                    <Setter Property="MarkerOffset" Value="14" />
+                </Style>
+                <Style TargetType="TableCell">
+                    <Setter Property="Padding" Value="8,4" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+                    <Setter Property="BorderThickness" Value="0.5" />
+                </Style>
+            </FlowDocument.Resources>
+
+            <Paragraph Style="{StaticResource H1}">M Viewer 使い方</Paragraph>
+            <Paragraph Style="{StaticResource Lead}">
+                AI生成画像に埋め込まれたメタデータ(プロンプトやパラメーター)を見ながら、並び替え・絞り込みして閲覧する画像ビューアです。
+                このウィンドウは Esc キーで閉じられます。
+            </Paragraph>
+
+            <!-- ───────────── 画像を開く ───────────── -->
+            <Paragraph Style="{StaticResource H2}">1. 画像を開く</Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph>メニュー「ファイル → フォルダを開く」で、フォルダ内の画像を一覧にします。</Paragraph></ListItem>
+                <ListItem><Paragraph>「ファイル → 画像を開く」では、選んだ画像のあるフォルダを開き、その画像を選択した状態にします。</Paragraph></ListItem>
+                <ListItem><Paragraph>フォルダや画像を、ウィンドウにドラッグ＆ドロップしても開けます(ドロップしたファイルやフォルダを開きます)。</Paragraph></ListItem>
+                <ListItem><Paragraph>対応する画像形式は PNG / JPEG / WebP / BMP / GIF / TIFF です。</Paragraph></ListItem>
+            </List>
+            <Paragraph Style="{StaticResource Body}">
+                サブフォルダの画像も読み込みたいときは、メニュー「設定 → サブフォルダの読み込み」で深さを選びます
+                (含めない / 1階層まで / 2階層まで / 3階層まで / 無制限)。
+                画像が非常に多いときは、深さを制限すると読み込みが速くなります。
+                開いたフォルダの直下にあるサブフォルダが1階層目です。
+            </Paragraph>
+
+            <!-- ───────────── 閲覧 ───────────── -->
+            <Paragraph Style="{StaticResource H2}">2. 画像を見る</Paragraph>
+            <Table CellSpacing="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0.5">
+                <Table.Columns>
+                    <TableColumn Width="200" />
+                    <TableColumn Width="*" />
+                </Table.Columns>
+                <TableRowGroup>
+                    <TableRow Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+                        <TableCell><Paragraph FontWeight="Bold">操作</Paragraph></TableCell>
+                        <TableCell><Paragraph FontWeight="Bold">動作</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>→ / PageDown / Space</Paragraph></TableCell>
+                        <TableCell><Paragraph>次の画像</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>← / PageUp / Backspace</Paragraph></TableCell>
+                        <TableCell><Paragraph>前の画像</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>Home / End</Paragraph></TableCell>
+                        <TableCell><Paragraph>最初の画像 / 最後の画像</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>F</Paragraph></TableCell>
+                        <TableCell><Paragraph>フィット表示(画面に収める)</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>1</Paragraph></TableCell>
+                        <TableCell><Paragraph>等倍(100%)表示</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>マウスホイール</Paragraph></TableCell>
+                        <TableCell><Paragraph>ポインターの位置を中心に拡大・縮小</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>ドラッグ</Paragraph></TableCell>
+                        <TableCell><Paragraph>画像を移動</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>画像をダブルクリック</Paragraph></TableCell>
+                        <TableCell><Paragraph>手動のズームや移動をやめて、選んでいる表示方式に戻す</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>F11</Paragraph></TableCell>
+                        <TableCell><Paragraph>全画面表示の切り替え(Esc でも戻れます)</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>Ctrl+C / Ctrl+X / Ctrl+V</Paragraph></TableCell>
+                        <TableCell><Paragraph>選んだファイルのコピー / 切り取り / 貼り付け</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>F2</Paragraph></TableCell>
+                        <TableCell><Paragraph>名前の変更</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>Delete</Paragraph></TableCell>
+                        <TableCell><Paragraph>ごみ箱へ移動(設定で許可しているときだけ)</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>Ctrl+Shift+C</Paragraph></TableCell>
+                        <TableCell><Paragraph>ファイルのパスをコピー</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>Ctrl+T</Paragraph></TableCell>
+                        <TableCell><Paragraph>タグの集計を開く</Paragraph></TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell><Paragraph>F1</Paragraph></TableCell>
+                        <TableCell><Paragraph>このマニュアルを開く</Paragraph></TableCell>
+                    </TableRow>
+                </TableRowGroup>
+            </Table>
+            <Paragraph Style="{StaticResource Body}">
+                キー操作は、絞り込み欄や文字を入力できる欄に入力しているときは働きません(入力を優先します)。
+                一覧の項目をクリックしてから使ってください。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                画像の右下に、いまの表示倍率(実際のピクセルに対する割合)と、「フィット」「100%」「全画面」のボタンが重なって出ます。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                <Bold>表示方式は引き継がれます。</Bold>
+                「フィット」か「100%」を選ぶと、画像を切り替えても同じ方式で開きます。選んでいる方のボタンは太字になり、次回起動時も保持されます。
+                ホイールやドラッグで手動で変えた分は、次の画像には引き継がれません。
+            </Paragraph>
+
+            <!-- ───────────── 並び替え ───────────── -->
+            <Paragraph Style="{StaticResource H2}">3. 並び替え</Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                左の一覧の上にある「並び替え」で、基準を選びます。
+                隣のボタンで、<Run Style="{StaticResource Code}" Text="▲ 昇順"/> と <Run Style="{StaticResource Code}" Text="▼ 降順"/> を切り替えます(ボタンに今の向きが表示されます)。
+            </Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph>基準: ファイル名(数字を考慮した自然順) / 更新日時 / サイズ / モデル / サンプラー / ステップ数 / CFG</Paragraph></ListItem>
+                <ListItem><Paragraph>モデル・サンプラー・ステップ数・CFG で並べるときは、その情報がない画像は、昇順でも降順でも常に最後になります。</Paragraph></ListItem>
+                <ListItem><Paragraph>基準が同じ画像は、ファイル名順になります。</Paragraph></ListItem>
+            </List>
+
+            <!-- ───────────── 絞り込み ───────────── -->
+            <Paragraph Style="{StaticResource H2}">4. 絞り込み</Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                画面の上のほうにある絞り込み欄(ウィンドウの右端まで伸びている欄)に語句を入力すると、その語句を含む画像だけが一覧に残ります。
+                入力するたびに、すぐ結果が変わります。入力欄の右端の「×」で、まとめて消せます。ステータスバーの右側に「120 件中 35 件を表示」のように件数が出ます。
+            </Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph><Bold>カンマ区切りで AND 検索</Bold></Paragraph></ListItem>
+            </List>
+            <Paragraph Style="{StaticResource Body}" Margin="24,0,0,4">
+                <Run Style="{StaticResource Code}" Text="blue hair, 1girl"/> のようにカンマ( , )で区切ると、すべての語を含む画像だけを表示します。
+                全角の「、」「，」も区切りとして使えます。
+                カンマの前後のスペースは無視されます。語の中のスペース(<Run Style="{StaticResource Code}" Text="blue hair"/>)は、1つの語として探します。
+            </Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph><Bold>スペースとアンダーバーは同じ扱い</Bold></Paragraph></ListItem>
+            </List>
+            <Paragraph Style="{StaticResource Body}" Margin="24,0,0,4">
+                <Run Style="{StaticResource Code}" Text="hatsune miku"/> と <Run Style="{StaticResource Code}" Text="hatsune_miku"/> は、どちらを入力しても、どちらの書き方のプロンプトにも一致します。
+                A1111 系が保存する、かっこの前のバックスラッシュ(<Run Style="{StaticResource Code}" Text="rem_\(re:zero\)"/> の <Run Style="{StaticResource Code}" Text="\"/>)は無視されるので、
+                <Run Style="{StaticResource Code}" Text="rem (re:zero)"/> でも探せます。大文字と小文字も区別しません。
+            </Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph><Bold>検索対象を選ぶ</Bold></Paragraph></ListItem>
+            </List>
+            <Paragraph Style="{StaticResource Body}" Margin="24,0,0,4">
+                絞り込み欄の左の「検索対象 ▾」から、探す場所にチェックを入れます。
+                ファイル名 / プロンプト / ネガティブプロンプト / キャラクター別プロンプト / キャラクター別ネガティブ / モデル名の6つで、最後の1つは外せません。
+                たとえば「キャラクター別プロンプト」だけにすると、キャラクターごとのプロンプトだけから探せます。設定は保存されます。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Note}">
+                メタデータは、フォルダを開いたあとにバックグラウンドで読み込みます。読み込みの途中は、プロンプトでの絞り込み結果が少なく出ることがあります。
+                ステータスバーに「メタデータ読み込み中…」が出ている間は、終わるまで待つと、結果と件数が自動で更新されます。
+            </Paragraph>
+
+            <!-- ───────────── メタデータ ───────────── -->
+            <Paragraph Style="{StaticResource H2}">5. メタデータの見方</Paragraph>
+            <Paragraph Style="{StaticResource Body}">画面の右側のパネルに、選んでいる画像の情報が出ます。</Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph><Bold>ファイル / 生成元</Bold> — 画像の名前、更新日時、サイズと、どのツールで生成されたか</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>プロンプト / ネガティブプロンプト</Bold> — タグごとの小さな枠(チップ)で表示します。チップをクリックすると、そのタグが絞り込み欄に追加され(重みやかっこは外した形で入ります)、もう一度クリックすると外れます。タグ辞書を読み込むと、タグの種類ごとに色が付きます(「9. タグの色分け」を参照)。「全文を表示」で元の文章を見られ、「コピー」ボタンでクリップボードにコピーできます。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>キャラクター別プロンプト</Bold> — NovelAI V4 / V4.5 の、キャラクターごとのプロンプトとネガティブです(該当する画像のみ表示)。人数に制限はありません。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>パラメーター</Bold> — モデル、サンプラー、スケジューラー、ステップ数、CFG、シード、サイズなどの主な項目。値の文字は選択してコピーできます。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>その他のパラメーター</Bold> — 上に入らなかった項目(折りたたみ)</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>生のメタデータ</Bold> — 画像に入っていた元の文字列(折りたたみ)。うまく読めない画像を調べるときに使います。</Paragraph></ListItem>
+            </List>
+            <Paragraph Style="{StaticResource Body}">
+                <Bold>カードの最小化。</Bold>
+                プロンプト、ネガティブプロンプト、キャラクター別プロンプト、パラメーターの各カードは、見出し(▾ の付いた行)をクリックすると、最小化できます(▸ になります)。もう一度クリックすると、元に戻ります。
+                最小化の状態は保存され、次回起動時や、別の画像に切り替えたあとも保たれます。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                キャラクターの見出しの <Run Style="{StaticResource Code}" Text="[C3 (x=0.5, y=0.5)]"/> は、そのキャラクターの配置の指定です。
+                画像を 5×5 のマス目に分けたときの位置(列は左から A〜E、行は上から 1〜5)と、横・縦の位置の割合(0〜1)を示します。
+                NovelAI で位置を指定していなくても、中央(C3)が入ることがあります。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                読み取れるのは、Stable Diffusion WebUI(A1111 / Forge)、ComfyUI、NovelAI、InvokeAI で生成した、PNG / JPEG / WebP の画像です。
+                これ以外のツールでも、プロンプトなどが一般的な名前の項目(prompt、negative_prompt、seed、steps など)で JSON として入っていれば、
+                「不明なツール(JSON: …)」として読めることがあります。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Note}">
+                SNS やチャットアプリを経由した画像、画像編集ソフトで保存し直した画像では、メタデータが消えていることがあります。
+                その場合は「AI生成メタデータは見つかりません」と表示されます。
+                PixAI など、サイトからダウンロードした画像も、プロンプトが画像の中に入っていないことがあります。
+            </Paragraph>
+
+            <!-- ───────────── サムネイル ───────────── -->
+            <Paragraph Style="{StaticResource H2}">6. サムネイル</Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                左側の一覧に、小さなサムネイルを表示します。メニュー「設定 → サムネイルを表示」で、表示するかどうかを切り替えます。
+                メニュー「設定 → サムネイルの大きさ」で、小・中・大を選べます。サムネイルは、画面に見えている分だけを作り、メモリの上にだけ置きます(最大600枚まで。ディスクには保存しません)。
+                そのため、アプリを再起動すると、作り直しになります。
+            </Paragraph>
+
+            <!-- ───────────── ファイル操作 ───────────── -->
+            <Paragraph Style="{StaticResource H2}">7. ファイル操作</Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                左側の一覧で、画像ファイルを操作できます。一覧の項目を右クリックするか、キーで操作します。
+                Ctrl や Shift を押しながらクリックすると、複数のファイルをまとめて選べます(右パネルと中央に表示するのは、その中の1枚です)。
+            </Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph><Bold>コピー / 切り取り / 貼り付け</Bold> — Windows のクリップボードを使うので、エクスプローラーに貼り付けたり、エクスプローラーでコピーした画像を、いま開いているフォルダに貼り付けたりできます。貼り付けできるのは画像ファイルだけで、同じ名前があるときは「名前 (2)」のように別の名前になります。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>名前の変更</Bold> — 拡張子はそのままで、名前の部分だけを変えます。1枚だけ選んでいるときに使えます。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>削除</Bold> — ごみ箱に移します。誤って消さないよう、初期設定では<Bold>使えません</Bold>。メニュー「設定 → ファイル操作 → 削除を許可する」をオンにしたときだけ使えます。「削除の前に確認する」(初期設定はオン)をオフにすると、確認なしで削除します。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>エクスプローラーで開く</Bold> — 選んだ画像を選択した状態で、エクスプローラーを開きます。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>そのほか</Bold> — 既定のアプリで開く、ファイルのパスをコピー、画像をコピー(他のアプリに貼り付け用)、プロンプトをコピー、プロパティ。</Paragraph></ListItem>
+            </List>
+            <Paragraph Style="{StaticResource Body}">
+                <Bold>ドラッグ&amp;ドロップで持ち出す。</Bold>
+                一覧の画像をドラッグして、エクスプローラーのフォルダや、他のアプリ(チャットや画像編集ソフトなど)にドロップできます。
+                ふつうはコピーです。<Bold>Shift を押しながらドラッグを始める</Bold>と、移動もできます(移動したファイルは、一覧から消えます)。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Note}">
+                外から M Viewer にファイルやフォルダをドロップしたときは、「1. 画像を開く」のとおり、それを開きます(コピーはしません)。
+            </Paragraph>
+
+            <!-- ───────────── 全画面 ───────────── -->
+            <Paragraph Style="{StaticResource H2}">8. 全画面表示</Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                <Bold>F11</Bold> キー、メニュー「表示 → 全画面表示」、または画像の右下の「全画面」ボタンで、全画面表示になります。
+                メニュー、左右のパネル、ステータスバーを隠して、画像だけを画面いっぱいに出します。
+                全画面のままでも、←→ などで画像を切り替えたり、ホイールでズームしたりできます。
+                <Bold>Esc</Bold> または F11 で、元の表示に戻ります。
+            </Paragraph>
+
+            <!-- ───────────── タグの色分け ───────────── -->
+            <Paragraph Style="{StaticResource H2}">9. タグの色分け</Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                プロンプトのタグ(チップ)を、種類ごとに色分けして表示します。色はダーク/ライトのテーマに合わせて変わります。
+            </Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph><Run Foreground="#3D8FE0" FontWeight="Bold" Text="青"/> — 一般(blue hair、smile など)</Paragraph></ListItem>
+                <ListItem><Paragraph><Run Foreground="#E0585B" FontWeight="Bold" Text="赤"/> — アーティスト</Paragraph></ListItem>
+                <ListItem><Paragraph><Run Foreground="#A56BE0" FontWeight="Bold" Text="紫"/> — 作品名</Paragraph></ListItem>
+                <ListItem><Paragraph><Run Foreground="#2EA84A" FontWeight="Bold" Text="緑"/> — キャラクター名</Paragraph></ListItem>
+                <ListItem><Paragraph><Run Foreground="#C98A1E" FontWeight="Bold" Text="橙"/> — メタ(highres など)</Paragraph></ListItem>
+                <ListItem><Paragraph><Run Foreground="#1FA39B" FontWeight="Bold" Text="青緑"/> — <Run Style="{StaticResource Code}" Text="&lt;lora:…&gt;"/> など(辞書は不要)</Paragraph></ListItem>
+            </List>
+            <Paragraph Style="{StaticResource Body}">
+                上の5つの分類(青・赤・紫・緑・橙)には、<Bold>Danbooru のタグ辞書</Bold>が必要です。
+                辞書は、a1111-sd-webui-tagcomplete などで配布されている <Run Style="{StaticResource Code}" Text="danbooru.csv"/>
+                (1行が「タグ,分類,件数,別名」の形式)を、ご自身で用意してください。アプリには同梱していません。
+            </Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph>メニュー「設定 → タグの色分け → タグ辞書(danbooru.csv)を読み込む」で、ファイルを選びます。</Paragraph></ListItem>
+                <ListItem><Paragraph>読み込んだ辞書は <Run Style="{StaticResource Code}" Text="%AppData%\MViewer\danbooru.csv"/> にコピーされ、次回からは自動で使われます。</Paragraph></ListItem>
+                <ListItem><Paragraph>辞書にないタグは、色が付きません。「色分けする」のチェックで、色分けそのもののオン/オフを切り替えられます。「タグ辞書を外す」で、辞書を使わない状態に戻せます。</Paragraph></ListItem>
+                <ListItem><Paragraph>スペースと <Run Style="{StaticResource Code}" Text="_"/> は同じ扱いで、<Run Style="{StaticResource Code}" Text="artist:名前"/> のように書かれたタグはアーティストとして扱います。</Paragraph></ListItem>
+            </List>
+
+            <!-- ───────────── タグの集計 ───────────── -->
+            <Paragraph Style="{StaticResource H2}">10. タグの集計</Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                メニュー「表示 → タグの集計」または <Bold>Ctrl+T</Bold> で、集計のウィンドウを開きます。
+                画像のプロンプトに使われているタグを、<Bold>そのタグを使っている画像の枚数</Bold>の多い順に並べます。
+                1枚の中で同じタグが何度出てきても、1枚と数えます。割合は、メタデータのある画像の枚数に対する割合です。
+            </Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph><Bold>集計するプロンプト</Bold> — プロンプト / ネガティブプロンプト / キャラクター別プロンプト から選びます。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>範囲</Bold> — 「一覧に表示中の画像」(絞り込みの結果)か、「フォルダのすべての画像」を選びます。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>並び替え</Bold> — 列の見出し(✓ / タグ / 分類 / 枚数 / 割合)をクリックすると、その列で並び替えます。もう一度クリックすると逆順になります。見出しの ▲ は昇順、▼ は降順です。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>タグを検索</Bold> — 一覧の中からタグを探します(スペースと _ は同じ扱い)。</Paragraph></ListItem>
+            </List>
+            <Paragraph Style="{StaticResource Body}">
+                行を<Bold>ダブルクリック</Bold>するか、選んで <Bold>Enter</Bold> を押すと、そのタグが絞り込み欄に入ります(もう一度で外れます)。
+                絞り込み欄に入っているタグには <Run Style="{StaticResource Code}" Text="✓"/> が付きます。
+                範囲が「一覧に表示中の画像」のときは、絞り込むと集計も自動で変わるので、
+                たとえばキャラクター名で絞り込むと、そのキャラクターと一緒によく使っているタグが分かります。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                右クリックで、選んだタグをカンマ区切りでコピー(Ctrl+C。プロンプトに貼り付けられます)、
+                または一覧をタグ・分類・枚数・割合のタブ区切りでコピー(表計算ソフトに貼り付けられます)できます。
+                タグ辞書を読み込んでいれば、タグは色分けされ、「分類」の欄に種類が出ます。
+            </Paragraph>
+            <Paragraph Style="{StaticResource Note}">
+                タグは、重みやかっこを外し、小文字にして、<Run Style="{StaticResource Code}" Text="_"/> をスペースにした形で数えます
+                (<Run Style="{StaticResource Code}" Text="(blue_hair:1.2)"/> と <Run Style="{StaticResource Code}" Text="blue hair"/> は同じタグ)。
+                メタデータの読み込み中は、読み込みが進むにつれて数が増えていきます。
+            </Paragraph>
+
+            <!-- ───────────── 設定 ───────────── -->
+            <Paragraph Style="{StaticResource H2}">11. 設定の保存</Paragraph>
+            <Paragraph Style="{StaticResource Body}">
+                テーマ(Windows の設定に合わせる / ダーク / ライト。メニュー「設定 → テーマ」)、サブフォルダの深さ、サムネイルの表示と大きさ、絞り込みの検索対象、フィット/100%の選択、削除に関する設定、タグの色分け、タグの集計の条件は、次回起動時も保持されます。
+                保存先は <Run Style="{StaticResource Code}" Text="%AppData%\MViewer\settings.json"/> です。
+                このファイルを削除すると、すべて初期設定に戻ります。
+            </Paragraph>
+
+            <!-- ───────────── 困ったとき ───────────── -->
+            <Paragraph Style="{StaticResource H2}">12. 困ったとき</Paragraph>
+            <List MarkerStyle="Disc">
+                <ListItem><Paragraph><Bold>WebP が表示されない</Bold> — Windows の「WebP 画像拡張機能」が必要です(メタデータの読み取りには不要)。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>GIF が動かない</Bold> — アニメーションは先頭のフレームだけ表示します。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>絞り込んでも何も出ない</Bold> — 「検索対象」のチェックと、カンマ区切りになっているかを確認してください。メタデータの読み込み中のこともあります。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>削除できない</Bold> — 初期設定では削除が無効です。メニュー「設定 → ファイル操作 → 削除を許可する」をオンにしてください。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>タグに色が付かない</Bold> — 「設定 → タグの色分け」で「色分けする」がオンか、辞書を読み込んでいるかを確認してください(&lt;lora:…&gt; だけは辞書なしで色が付きます)。</Paragraph></ListItem>
+                <ListItem><Paragraph><Bold>メタデータが一部しか出ない</Bold> — 「生のメタデータ」を開いて、元の文字列に情報が入っているかを確認してください。</Paragraph></ListItem>
+            </List>
+        </FlowDocument>
+    </FlowDocumentScrollViewer>
+</Window>

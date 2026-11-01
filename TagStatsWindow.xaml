@@ -1,0 +1,108 @@
+<Window x:Class="MViewer.TagStatsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
+        ui:WindowHelper.UseModernWindowStyle="True"
+        Title="M Viewer - タグの集計" Icon="app.ico" Width="600" Height="700" MinWidth="460" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 集計の条件 -->
+        <WrapPanel Grid.Row="0">
+            <ComboBox x:Name="SourceBox" Margin="0,0,8,8" MinWidth="180" SelectionChanged="Option_Changed"
+                      ToolTip="集計するプロンプト">
+                <ComboBoxItem Content="プロンプト" Tag="Prompt" />
+                <ComboBoxItem Content="ネガティブプロンプト" Tag="Negative" />
+                <ComboBoxItem Content="キャラクター別プロンプト" Tag="Characters" />
+            </ComboBox>
+            <ComboBox x:Name="ScopeBox" Margin="0,0,0,8" MinWidth="180" SelectionChanged="Option_Changed"
+                      ToolTip="集計する画像の範囲">
+                <ComboBoxItem Content="一覧に表示中の画像" Tag="Filtered" />
+                <ComboBoxItem Content="フォルダのすべての画像" Tag="All" />
+            </ComboBox>
+        </WrapPanel>
+
+        <TextBox x:Name="SearchBox" Grid.Row="1" Margin="0,0,0,8"
+                 ui:ControlHelper.PlaceholderText="タグを検索(一覧の中から探す)"
+                 ui:TextBoxHelper.IsDeleteButtonVisible="True"
+                 TextChanged="Search_Changed" />
+
+        <TextBlock x:Name="SummaryText" Grid.Row="2" Margin="2,0,0,6" TextWrapping="Wrap"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+
+        <ListView x:Name="TagList" Grid.Row="3" SelectionMode="Extended"
+                  VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                  MouseDoubleClick="TagList_MouseDoubleClick" KeyDown="TagList_KeyDown"
+                  GridViewColumnHeader.Click="Header_Click">
+            <ListView.View>
+                <!-- 見出しをクリックすると、その列で並び替える(もう一度で逆順)。見出しの文字はコードで付ける -->
+                <GridView>
+                    <GridViewColumn x:Name="MarkColumn" Width="40">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Mark}" ToolTip="絞り込み欄に入っているタグ" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn x:Name="TagColumn" Width="230">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Tag}" Foreground="{Binding Foreground}"
+                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Tag}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn x:Name="KindColumn" Width="110">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Kind}" TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn x:Name="CountColumn" Width="76">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding CountText}" TextAlignment="Right" MinWidth="44" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn x:Name="PercentColumn" Width="120">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <!-- 割合の棒(最大 50) -->
+                                    <Border Width="50" Height="6" CornerRadius="3" VerticalAlignment="Center"
+                                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                                        <Border Width="{Binding BarWidth}" HorizontalAlignment="Left" CornerRadius="3"
+                                                Background="{DynamicResource SystemControlHighlightAccentBrush}" />
+                                    </Border>
+                                    <TextBlock Text="{Binding PercentText}" Margin="8,0,0,0" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="絞り込みに追加 / 外す(_F)" InputGestureText="Enter" Click="ToggleFilter_Click" />
+                    <Separator />
+                    <MenuItem Header="選んだタグをコピー(_C)" InputGestureText="Ctrl+C" Click="CopyTags_Click" />
+                    <MenuItem Header="一覧をコピー(タグと枚数)(_L)" Click="CopyList_Click" />
+                </ContextMenu>
+            </ListView.ContextMenu>
+        </ListView>
+
+        <TextBlock Grid.Row="4" Margin="2,8,0,0" TextWrapping="Wrap" FontSize="12"
+                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                   Text="列の見出しをクリックすると、その列で並び替えます(もう一度で逆順)。ダブルクリック(または Enter)で、タグを絞り込みに追加 / 外す。範囲が「一覧に表示中の画像」のときは、絞り込むと、そのタグと一緒に使われているタグの集計に変わります。" />
+    </Grid>
+</Window>
