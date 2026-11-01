@@ -18,6 +18,8 @@ dotnet run
 dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
+main へのプッシュと PR のたびに、GitHub Actions でビルドが通るかを確かめています(`.github/workflows/build.yml`)。
+
 ## 機能
 
 - 画像表示(PNG / JPEG / WebP / BMP / GIF / TIFF / HEIC)、ホイールでズーム、ドラッグでパン、ダブルクリックでフィット
