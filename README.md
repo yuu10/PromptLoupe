@@ -4,8 +4,6 @@ AI生成画像のメタデータを読み取り、それを元に並び替え・
 
 ![PromptLoupe のメイン画面。左にファイル一覧、中央に画像、右にプロンプトのタグやキャラクター別プロンプトのカード](docs/images/main.png)
 
-1.4.3 までは「M Viewer」という名前でした(1.5.0 で改名)。設定とタグ辞書の保存先も `%AppData%\MViewer` から `%AppData%\PromptLoupe` に変わり、初めて起動したときに以前の保存先から引き継ぎます(以前の保存先は消しません)。
-
 ## ビルドと実行
 
 .NET 8 SDK が必要です。
@@ -21,6 +19,13 @@ dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile
 ```
 
 main へのプッシュと PR のたびに、GitHub Actions でビルドが通るかを確かめています(`.github/workflows/build.yml`)。
+
+## リリースの手順
+
+1. `PromptLoupe.csproj` の `<Version>` を上げて、main にマージする
+2. 同じバージョンのタグを付けて push する(例: `git tag v1.6.0` → `git push origin v1.6.0`)
+3. GitHub Actions(`.github/workflows/release.yml`)が、自己完結型の単一 exe(.NET のインストール不要)を zip にまとめ、Releases に**下書き**で載せる。タグと `<Version>` が違うと止まる
+4. Releases で下書きを開き、「変更点」を書いて「Publish release」を押す
 
 ## 初めて起動するとき(SmartScreen の警告)
 
