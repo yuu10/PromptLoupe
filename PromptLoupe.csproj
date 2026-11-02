@@ -13,6 +13,8 @@
     <Product>PromptLoupe</Product>
     <Authors>yuto</Authors>
     <Copyright>Copyright (c) 2026 yuto</Copyright>
+    <!-- ModernWpfUI の翻訳ファイルは、日本語だけを出力する(英語は本体に入っている。ほかの約 60 言語は入れない) -->
+    <SatelliteResourceLanguages>ja-JP</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
