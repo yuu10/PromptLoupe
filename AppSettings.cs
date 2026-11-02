@@ -60,34 +60,10 @@ public sealed class AppSettings
     public bool TagStatsSortDescending { get; set; } = true;
 
     /// <summary>設定や辞書の保存先(%AppData%\PromptLoupe)。</summary>
-    public static string DataDir { get; } = PrepareDataDir();
+    public static string DataDir { get; } =
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PromptLoupe");
 
     static string FilePath => Path.Combine(DataDir, "settings.json");
-
-    /// <summary>
-    /// 1.5.0 で名前を M Viewer から変えた。新しい保存先がまだなく、旧名の保存先(%AppData%\MViewer)があれば、
-    /// 中のファイルを新しい保存先にコピーする(旧名の保存先は消さない)。
-    /// </summary>
-    static string PrepareDataDir()
-    {
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        string dir = Path.Combine(appData, "PromptLoupe");
-        string oldDir = Path.Combine(appData, "MViewer");
-        try
-        {
-            if (!Directory.Exists(dir) && Directory.Exists(oldDir))
-            {
-                Directory.CreateDirectory(dir);
-                foreach (var file in Directory.GetFiles(oldDir))
-                    File.Copy(file, Path.Combine(dir, Path.GetFileName(file)));
-            }
-        }
-        catch
-        {
-            // 引き継げなくても、既定値で起動できる
-        }
-        return dir;
-    }
 
     public static AppSettings Load()
     {

@@ -7,7 +7,8 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 
 - 回答とコメントは日本語。丁寧で簡潔に。UI の文言も日本語。
 - ビルドは `dotnet build`、実行は `dotnet run`。変更したら**必ずビルドして、エラーがないことを確かめる**。
-- CI は GitHub Actions(`.github/workflows/build.yml`)。main へのプッシュと PR で `dotnet build -c Release` を実行するだけ(テストはない)。Releases への自動配布は、配布するときに足す予定。
+- CI は GitHub Actions(`.github/workflows/build.yml`)。main へのプッシュと PR で `dotnet build -c Release` を実行するだけ(テストはない)。
+- リリースは `.github/workflows/release.yml`。`v*` のタグを push すると、自己完結型・単一 exe(圧縮あり、約 73MB)を zip にして Releases に**下書き**で作る。タグと `<Version>` が違うと失敗する。公開は人が GitHub の画面で行う。
 - 画面の見た目やドラッグ操作などは、実行しても確認しきれない。ユーザーに確認してもらう項目として、作業の最後に挙げる。
 - 1.4.3(1.4.2 で JPEG の EXIF 回転、1.4.3 で HEIC の表示)まで、ユーザーが「動作は問題なし」と確認済み(2026-11-01)。ただし、左右反転の Orientation(2・4・5・7)は実物の画像がなく未確認。
 - 1.6.0(撮影情報(Exif)カード、GPS の表示設定、撮影日時の並び替え、HEIC の Exif 読み取り)も、ユーザーが「問題なし」と確認済み(2026-11-02)。WebP の EXIF 回転だけは、実物の画像がなく未確認。
@@ -24,7 +25,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 | `FileItem.cs` | 一覧の項目、検索用の正規化済み文字列、並び替え(自然順は `StrCmpLogicalW`) |
 | `ThumbnailService.cs` | サムネイルのメモリキャッシュ(LRU 600 枚、ディスクには保存しない) |
 | `ExifOrientation.cs` | JPEG・WebP の EXIF 回転(Orientation)の読み取りと補正。表示(`MainWindow.Decode`)とサムネイルの両方で使う。WebP は WIC ではなく `MetadataReader.ReadExif` で読む。HEIC は WIC が irot で直すので**回さない**(二重に回る) |
-| `AppSettings.cs` | 設定(`%AppData%\PromptLoupe\settings.json`)。`DataDir` が初回に旧名の `%AppData%\MViewer` の中身をコピーして引き継ぐ(旧フォルダは消さない) |
+| `AppSettings.cs` | 設定(`%AppData%\PromptLoupe\settings.json`)。保存先は `DataDir`。旧名 M Viewer の保存先(`%AppData%\MViewer`)からの引き継ぎは、利用者がいないため削除した |
 | `MainWindow.xaml` / `.cs` | 画面、閲覧、絞り込み、メタデータ表示、ズーム |
 | `MainWindow.FileOps.cs` | 左パネルのファイル操作と、一覧からのドラッグ持ち出し |
 | `MainWindow.Fullscreen.cs` | 全画面表示(F11 / Esc) |

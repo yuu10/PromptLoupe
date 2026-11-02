@@ -293,11 +293,6 @@
                 保存先は <Run Style="{StaticResource Code}" Text="%AppData%\PromptLoupe\settings.json"/> です。
                 このファイルを削除すると、すべて初期設定に戻ります。
             </Paragraph>
-            <Paragraph Style="{StaticResource Note}">
-                1.4.3 までは「M Viewer」という名前でした。初めて起動したときに、以前の保存先
-                <Run Style="{StaticResource Code}" Text="%AppData%\MViewer"/> の設定とタグ辞書を引き継ぎます。
-                以前の保存先はそのまま残るので、不要なら削除してかまいません。
-            </Paragraph>
 
             <!-- ───────────── 困ったとき ───────────── -->
             <Paragraph Style="{StaticResource H2}">12. 困ったとき</Paragraph>
