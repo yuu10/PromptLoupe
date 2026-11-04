@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    OS に依存しない共通部分(メタデータの読み取り、設定、タグ辞書、プロンプトの分割)。
+    WPF を使わないので、Linux・Mac でもビルドとテストができる。
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PromptLoupe</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PromptLoupe.Tests" />
+  </ItemGroup>
+
+</Project>

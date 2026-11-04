@@ -15,7 +15,14 @@
     <Copyright>Copyright (c) 2026 yuto</Copyright>
     <!-- ModernWpfUI の翻訳ファイルは、日本語だけを出力する(英語は本体に入っている。ほかの約 60 言語は入れない) -->
     <SatelliteResourceLanguages>ja-JP</SatelliteResourceLanguages>
+    <!-- 共通部分とテストは別のプロジェクト。この画面のプロジェクトには含めない -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);PromptLoupe.Core/**;PromptLoupe.Tests/**</DefaultItemExcludes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- OS に依存しない共通部分(メタデータの読み取り・設定・タグ辞書) -->
+    <ProjectReference Include="PromptLoupe.Core/PromptLoupe.Core.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <Resource Include="app.ico" />

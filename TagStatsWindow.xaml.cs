@@ -144,7 +144,7 @@ public partial class TagStatsWindow : Window
     void ApplyView()
     {
         string? keep = (TagList.SelectedItem as TagStatRow)?.Tag;
-        string q = FileItem.Normalize(SearchBox.Text).Trim();
+        string q = PromptText.Normalize(SearchBox.Text).Trim();
 
         IEnumerable<TagStatRow> rows = allRows;
         if (q.Length > 0) rows = rows.Where(r => r.Tag.Contains(q, StringComparison.Ordinal));

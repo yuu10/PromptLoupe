@@ -57,7 +57,7 @@ public partial class MainWindow
         }
         else
         {
-            string clean = CleanTag(t);
+            string clean = PromptText.CleanTag(t);
             bool artistPrefix = false;
             if (clean.StartsWith("artist:", StringComparison.OrdinalIgnoreCase))
             {
@@ -65,7 +65,7 @@ public partial class MainWindow
                 artistPrefix = true;
             }
 
-            if (tagDict != null) kind = tagDict.Lookup(FileItem.Normalize(clean).Trim());
+            if (tagDict != null) kind = tagDict.Lookup(PromptText.Normalize(clean).Trim());
             if (kind < 0 && artistPrefix) kind = 1;
         }
 

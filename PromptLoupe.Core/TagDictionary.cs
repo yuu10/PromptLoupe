@@ -45,7 +45,7 @@ public sealed class TagDictionary
                 string catText = c2 < 0 ? line[(c1 + 1)..] : line[(c1 + 1)..c2];
                 if (!byte.TryParse(catText.Trim(), out byte cat) || cat > 5) continue;
 
-                string tag = FileItem.Normalize(line[..c1]).Trim();
+                string tag = PromptText.Normalize(line[..c1]).Trim();
                 if (tag.Length == 0) continue;
                 map.TryAdd(tag, cat);
 
@@ -55,7 +55,7 @@ public sealed class TagDictionary
                 {
                     foreach (var a in line[(c3 + 1)..].Trim().Trim('"').Split(','))
                     {
-                        string alias = FileItem.Normalize(a).Trim();
+                        string alias = PromptText.Normalize(a).Trim();
                         if (alias.Length > 0) map.TryAdd(alias, cat);
                     }
                 }

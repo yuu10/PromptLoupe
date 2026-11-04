@@ -7,7 +7,10 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 
 - 回答とコメントは日本語。丁寧で簡潔に。UI の文言も日本語。
 - ビルドは `dotnet build`、実行は `dotnet run`。変更したら**必ずビルドして、エラーがないことを確かめる**。
-- CI は GitHub Actions(`.github/workflows/build.yml`)。main へのプッシュと PR で `dotnet build -c Release` を実行するだけ(テストはない)。
+- テストは `dotnet test PromptLoupe.Tests`(共通部分 `PromptLoupe.Core` だけが対象。画面のテストはない)。テスト用の画像は、テストの中でバイト列から組み立てる(`TestImages.cs` / `ExifBuilder`)。メタデータの読み取りを直したら、テストも足す。
+- CI は GitHub Actions(`.github/workflows/build.yml`)。main と `claude/**` へのプッシュと PR で、Windows で `dotnet build -c Release`、Linux で `dotnet test` を実行する。
+- クラウド(Linux)のセッションでは、WPF のプロジェクトはビルドできない(Ubuntu の .NET SDK には WindowsDesktop の SDK が入っていない。Microsoft 版の SDK の配布元はネットワークの設定で使えない)。`PromptLoupe.Core` と `PromptLoupe.Tests` はビルド・テストできる。WPF 側を変えたら、push して CI の Windows ビルドで確かめる。SDK は `apt-get install -y dotnet-sdk-8.0` で入れる。
+- 共通部分を `PromptLoupe.Core/` に切り出した(2026-11-04)。クロスプラットフォーム版(Avalonia)の準備。WPF 版の動きは変えていない。切り出し後の WPF 版で、起動・PNG と JPEG のメタデータ表示・タグの絞り込みと色分けと集計・設定の引き継ぎ・撮影情報・EXIF 回転を、ユーザーが「問題なし」と確認済み(2026-11-04)。ユーザーは JPEG の実物を持っていないので、確認用の JPEG は Pillow で作って渡した(A1111 の UserComment、カメラの Exif と GPS、Orientation 6。生成スクリプトはリポジトリに入れていない)。
 - リリースは `.github/workflows/release.yml`。`v*` のタグを push すると、自己完結型・単一 exe(圧縮あり、約 73MB)を zip にして Releases に**下書き**で作る。タグと `<Version>` が違うと失敗する。公開は人が GitHub の画面で行う。
 - 画面の見た目やドラッグ操作などは、実行しても確認しきれない。ユーザーに確認してもらう項目として、作業の最後に挙げる。
 - 1.4.3(1.4.2 で JPEG の EXIF 回転、1.4.3 で HEIC の表示)まで、ユーザーが「動作は問題なし」と確認済み(2026-11-01)。
@@ -20,17 +23,20 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 
 | ファイル | 役割 |
 |---|---|
-| `Metadata/MetadataReader.cs` | PNG(tEXt / iTXt / zTXt)、JPEG・WebP・HEIC(EXIF)の読み取りと、生成ツールごとの解釈。HEIC は ISOBMFF の meta → iinf / iloc から Exif アイテムを探す |
-| `Metadata/ImageMetadata.cs` | 解釈済みメタデータ |
-| `Metadata/ExifInfo.cs` | EXIF の撮影情報(カメラ・露出・撮影日時・GPS)と、右パネル用の整形。GPS は `ShowGps`(既定オフ)のときだけ座標を出す |
-| `FileItem.cs` | 一覧の項目、検索用の正規化済み文字列、並び替え(自然順は `StrCmpLogicalW`) |
+| `PromptLoupe.Core/` | OS に依存しない共通部分(下の `Metadata/`・`PromptText.cs`・`AppSettings.cs`・`TagDictionary.cs`)。WPF を参照しない。名前空間は移す前と同じ(`PromptLoupe` / `PromptLoupe.Metadata`) |
+| `PromptLoupe.Tests/` | 共通部分のテスト(xUnit) |
+| `Metadata/MetadataReader.cs`(Core) | PNG(tEXt / iTXt / zTXt)、JPEG・WebP・HEIC(EXIF)の読み取りと、生成ツールごとの解釈。HEIC は ISOBMFF の meta → iinf / iloc から Exif アイテムを探す |
+| `Metadata/ImageMetadata.cs`(Core) | 解釈済みメタデータ |
+| `Metadata/ExifInfo.cs`(Core) | EXIF の撮影情報(カメラ・露出・撮影日時・GPS)と、右パネル用の整形。GPS は `ShowGps`(既定オフ)のときだけ座標を出す |
+| `PromptText.cs`(Core) | 検索用の正規化(`Normalize`)、プロンプトのタグへの分割(`SplitTags`)、重みの除去(`CleanTag`)、集計用のタグ(`TagKeys`) |
+| `FileItem.cs` | 一覧の項目、検索用の正規化済み文字列、並び替え(自然順は `StrCmpLogicalW`。Windows 専用なので、Core に移すときは自前の実装が要る) |
 | `ThumbnailService.cs` | サムネイルのメモリキャッシュ(LRU 600 枚、ディスクには保存しない) |
 | `ExifOrientation.cs` | JPEG・WebP の EXIF 回転(Orientation)の読み取りと補正。表示(`MainWindow.Decode`)とサムネイルの両方で使う。WebP は WIC ではなく `MetadataReader.ReadExif` で読む。HEIC は WIC が irot で直すので**回さない**(二重に回る) |
-| `AppSettings.cs` | 設定(`%AppData%\PromptLoupe\settings.json`)。保存先は `DataDir`。旧名 M Viewer の保存先(`%AppData%\MViewer`)からの引き継ぎは、利用者がいないため削除した |
+| `AppSettings.cs`(Core) | 設定(`%AppData%\PromptLoupe\settings.json`)。保存先は `DataDir`。旧名 M Viewer の保存先(`%AppData%\MViewer`)からの引き継ぎは、利用者がいないため削除した |
 | `MainWindow.xaml` / `.cs` | 画面、閲覧、絞り込み、メタデータ表示、ズーム |
 | `MainWindow.FileOps.cs` | 左パネルのファイル操作と、一覧からのドラッグ持ち出し |
 | `MainWindow.Fullscreen.cs` | 全画面表示(F11 / Esc) |
-| `MainWindow.Tags.cs` / `TagDictionary.cs` | タグの色分けと、Danbooru 辞書(danbooru.csv)の読み込み |
+| `MainWindow.Tags.cs` / `TagDictionary.cs`(Core) | タグの色分けと、Danbooru 辞書(danbooru.csv)の読み込み |
 | `RenameWindow.xaml(.cs)` | 名前の変更ダイアログ |
 | `TagStatsWindow.xaml(.cs)` / `MainWindow.TagStats.cs` | タグの集計(使っている画像の枚数)。一覧や絞り込みが変わると `NotifyTagStats` で数え直す(300ms 間引き) |
 | `HelpWindow.xaml(.cs)` | 使い方マニュアル(`FlowDocument`) |
@@ -38,6 +44,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 ## 守ること・落とし穴
 
 - `ImageMetadata` は WPF の `System.Windows.Media.ImageMetadata` と名前が衝突する。`MainWindow.xaml.cs` では `using ImageMetadata = PromptLoupe.Metadata.ImageMetadata;` で解決している。`System.Windows.Media` を使う partial ファイルでは、`ImageMetadata` を直接書かない。
+- ルートの `PromptLoupe.csproj` は、`DefaultItemExcludes` で `PromptLoupe.Core/**` と `PromptLoupe.Tests/**` を除いている(除かないと、Core のファイルが二重にコンパイルされる)。ルートに `.sln` を置くと、`dotnet build` がプロジェクトを選べずに失敗するので置かない。
 - `ListCollectionView.DeferRefresh()` の最中は、元のコレクションを変更できない。フォルダを開くたびに新しい `ObservableCollection` と `ListCollectionView` を作る(`SetItems`)。
 - 自作の `TextBox` スタイル(`PlainText`)は、文字色をテーマのブラシで指定しないと、ダークでも黒になる。
 - **一覧は複数選択**(`SelectionMode="Extended"`)。表示中の1枚は `currentItem` で管理し、`SelectedItem` は使わない。項目をまとめて取り除くときは `suppressSelection` と `RemoveItems` を使う。削除や名前変更のあとは、`FocusSelectedListItem` でフォーカスを新しい項目に移す(↑↓キーが先頭から始まるのを防ぐ)。
@@ -55,5 +62,5 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 
 ## 次にやること(候補)
 
-1. Mac 版(Avalonia UI)。メタデータ読み取りと設定は共通化できる。
+1. Mac・Linux 版(Avalonia UI)。共通部分の切り出しは済み(`PromptLoupe.Core`)。Linux で動けばクラウドで開発・確認(Avalonia.Headless でスクリーンショット)ができる。Mac はユーザーの MacBook Pro 2016(Intel、macOS 12 まで)で確認する。置き換えが要るもの: 画像の読み込み(WIC → Skia。HEIC は別のライブラリが要る)、自然順の並び替え(`StrCmpLogicalW`)、ごみ箱(VisualBasic の関数)、shell32 の呼び出し、ModernWpfUI、使い方の `FlowDocument`。Mac の配布は署名・公証がないと Gatekeeper に強く止められる。
 2. 配布の準備。コード署名は**しない方針**(2026-11-01 決定。費用に見合わず、OV・EV 証明書でも SmartScreen の警告はすぐには消えないため)。README に SmartScreen の回避方法を書いた。警告が問題になってきたら、Microsoft Store(MSIX、Store 側で署名)か SignPath Foundation(OSS 向けの無料署名)を検討する。名前は PromptLoupe に決定(Web・GitHub・J-PlatPat で同名なし、2026-11-01 確認。法的な確認ではない)。`LICENSE`(MIT、著作権者 yuto)と `THIRD-PARTY-NOTICES.txt`(ModernWpfUI)は追加済みで、バージョン情報と使い方にも表示している。アイコン(`app.ico`)は、写真と、文字を映す虫眼鏡の絵(1.6.0 の公開前にタグの絵から変更)。`tools/make_icon.ps1`(WPF で描画し、16〜256px の PNG を詰めた .ico を作る)で生成する。
