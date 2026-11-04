@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Avalonia 版(Windows・Mac・Linux)。開発中。WPF 版(ルートの PromptLoupe.csproj)と同じ機能になるまで、並べて置く。
+    共通部分(メタデータの読み取り・設定・タグ辞書)は PromptLoupe.Core を使う。
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>PromptLoupe</AssemblyName>
+    <RootNamespace>PromptLoupe</RootNamespace>
+    <ApplicationIcon>../app.ico</ApplicationIcon>
+    <Version>1.6.0</Version>
+    <Product>PromptLoupe</Product>
+    <Authors>yuto</Authors>
+    <Copyright>Copyright (c) 2026 yuto</Copyright>
+    <!-- XAML のバインディングを、コンパイル時に型で確かめる -->
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../PromptLoupe.Core/PromptLoupe.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="../app.ico" Link="Assets/app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      配布物に同梱するライセンス文(ビルド・発行の出力先にコピーする)。
+      ルートの THIRD-PARTY-NOTICES.txt は WPF 版用(ModernWpfUI)なので入れない。
+      Avalonia 版を配布する前に、Avalonia・SkiaSharp などの表記をまとめた文書を作る(CLAUDE.md の「次にやること」)
+    -->
+    <None Include="../LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 画面の部品。MIT ライセンス。画像の読み込みには、Avalonia に含まれる SkiaSharp を使う -->
+    <PackageReference Include="Avalonia" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+  </ItemGroup>
+
+</Project>

@@ -15,8 +15,8 @@
     <Copyright>Copyright (c) 2026 yuto</Copyright>
     <!-- ModernWpfUI の翻訳ファイルは、日本語だけを出力する(英語は本体に入っている。ほかの約 60 言語は入れない) -->
     <SatelliteResourceLanguages>ja-JP</SatelliteResourceLanguages>
-    <!-- 共通部分とテストは別のプロジェクト。この画面のプロジェクトには含めない -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);PromptLoupe.Core/**;PromptLoupe.Tests/**</DefaultItemExcludes>
+    <!-- 共通部分・テスト・Avalonia 版は別のプロジェクト。この画面のプロジェクトには含めない -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);PromptLoupe.Core/**;PromptLoupe.Tests/**;PromptLoupe.Avalonia/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

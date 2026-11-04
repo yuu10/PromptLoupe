@@ -26,6 +26,21 @@ dotnet test PromptLoupe.Tests
 
 main と `claude/` のブランチへのプッシュ、PR のたびに、GitHub Actions でビルドとテストが通るかを確かめています(`.github/workflows/build.yml`)。
 
+### Avalonia 版(開発中)
+
+Windows・Mac・Linux で動く版を `PromptLoupe.Avalonia/` で作っています。WPF 版と同じ機能になるまでは、WPF 版を正式な版とします。Avalonia 版はまだ配布していません。
+
+```
+dotnet run --project PromptLoupe.Avalonia
+```
+
+WPF 版との違い(今のところ):
+
+- HEIC・TIFF の画像は表示できません(メタデータと撮影情報は読めます)。WebP は Windows の拡張機能がなくても表示できます
+- 一覧からのドラッグ持ち出し、ファイルのコピー・切り取り・貼り付け、画像のコピー、プロパティ、使い方の画面は、まだありません
+- 設定は WPF 版と同じファイルを使います(Windows では `%AppData%\PromptLoupe`、Mac・Linux では `~/.config/PromptLoupe`)
+- Mac のショートカットは Ctrl の代わりに ⌘ です。削除は ⌘+Delete(Backspace)でもできます
+
 ## リリースの手順
 
 1. `PromptLoupe.csproj` の `<Version>` を上げて、main にマージする
@@ -101,10 +116,18 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
 - `Metadata/ImageMetadata.cs` — 解釈済みメタデータのモデル
 - `Metadata/ExifInfo.cs` — EXIF の撮影情報と、表示用の整形
 - `PromptText.cs` — 検索用の正規化、プロンプトのタグへの分割
+- `NaturalComparer.cs` — 自然順(img2 が img10 より前)の比較(Avalonia 版で使う)
 - `AppSettings.cs` — 設定の保存
 - `TagDictionary.cs` — タグ辞書の読み込み
 
 **PromptLoupe.Tests/** — 共通部分のテスト(`dotnet test PromptLoupe.Tests`)
+
+**PromptLoupe.Avalonia/**(Avalonia の画面。開発中)
+
+- WPF 版と同じ名前のファイル(`MainWindow.*`・`FileItem.cs`・`ThumbnailService.cs` など)は、同じ役割
+- `ImageLoader.cs` — 画像の読み込み(SkiaSharp)と、JPEG・WebP の EXIF 回転の補正
+- `PlatformShell.cs` — 既定のアプリで開く・ファイルマネージャーで表示・ごみ箱へ移す(OS ごとの処理)
+- `MessageDialog.cs` — メッセージのダイアログ
 
 **ルート**(WPF の画面。Windows 専用)
 
