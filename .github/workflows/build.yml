@@ -1,9 +1,9 @@
-# main へのプッシュと PR のたびに、ビルドが通るかを確かめる
+# main と claude/ のブランチへのプッシュ、PR のたびに、ビルドとテストが通るかを確かめる
 name: ビルド
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
   pull_request:
 
 jobs:
@@ -23,3 +23,17 @@ jobs:
 
       - name: ビルド
         run: dotnet build -c Release --no-restore
+
+  test:
+    # 共通部分(PromptLoupe.Core)は OS に依存しないので、Linux でテストする
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: テスト
+        run: dotnet test PromptLoupe.Tests -c Release

@@ -18,7 +18,13 @@ dotnet run
 dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
-main へのプッシュと PR のたびに、GitHub Actions でビルドが通るかを確かめています(`.github/workflows/build.yml`)。
+共通部分(メタデータの読み取りなど)のテストは、Windows 以外(Linux・Mac)でも実行できます:
+
+```
+dotnet test PromptLoupe.Tests
+```
+
+main と `claude/` のブランチへのプッシュ、PR のたびに、GitHub Actions でビルドとテストが通るかを確かめています(`.github/workflows/build.yml`)。
 
 ## リリースの手順
 
@@ -89,16 +95,25 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
 
 ## 構成
 
+**PromptLoupe.Core/**(OS に依存しない共通部分。Linux・Mac でもビルドできる)
+
 - `Metadata/MetadataReader.cs` — 各形式のメタデータ抽出と、生成ツールごとの解釈
 - `Metadata/ImageMetadata.cs` — 解釈済みメタデータのモデル
 - `Metadata/ExifInfo.cs` — EXIF の撮影情報と、表示用の整形
-- `FileItem.cs` — 一覧の項目と並び替え用コンパレーター、検索用の正規化
+- `PromptText.cs` — 検索用の正規化、プロンプトのタグへの分割
+- `AppSettings.cs` — 設定の保存
+- `TagDictionary.cs` — タグ辞書の読み込み
+
+**PromptLoupe.Tests/** — 共通部分のテスト(`dotnet test PromptLoupe.Tests`)
+
+**ルート**(WPF の画面。Windows 専用)
+
+- `FileItem.cs` — 一覧の項目と並び替え用コンパレーター
 - `ThumbnailService.cs` — サムネイルの生成とメモリキャッシュ
 - `ExifOrientation.cs` — JPEG・WebP の EXIF 回転情報の読み取りと、向きの補正
-- `AppSettings.cs` — 設定の保存
 - `MainWindow.FileOps.cs` — ファイル操作とドラッグ&ドロップ(持ち出し)
 - `MainWindow.Fullscreen.cs` — 全画面表示
-- `MainWindow.Tags.cs` / `TagDictionary.cs` — タグの色分けと、タグ辞書の読み込み
+- `MainWindow.Tags.cs` — タグの色分け
 - `RenameWindow.xaml(.cs)` — 名前の変更ダイアログ
 - `TagStatsWindow.xaml(.cs)` / `MainWindow.TagStats.cs` — タグの集計
 - `MainWindow.xaml(.cs)` — UI

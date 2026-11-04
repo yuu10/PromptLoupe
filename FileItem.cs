@@ -46,52 +46,28 @@ public sealed class FileItem : INotifyPropertyChanged
 
     string? normName, normPrompt, normNegative, normModel, normCharPrompts, normCharNegatives;
 
-    /// <summary>
-    /// 検索用に正規化する: 小文字にし、_ をスペースに、エスケープ用の \ を取り除く。
-    /// (hatsune_miku と hatsune miku、rem \(re:zero\) と rem (re:zero) を同じものとして探すため)
-    /// </summary>
-    public static string Normalize(string? s)
-    {
-        if (string.IsNullOrEmpty(s)) return "";
-        return s.Replace("\\", "").Replace('_', ' ').ToLowerInvariant();
-    }
-
-    public string NormName => normName ??= Normalize(Display);
-    public string NormPrompt => normPrompt ??= Normalize(Meta?.Prompt);
-    public string NormNegative => normNegative ??= Normalize(Meta?.NegativePrompt);
-    public string NormModel => normModel ??= Normalize(Meta?.Model);
+    public string NormName => normName ??= PromptText.Normalize(Display);
+    public string NormPrompt => normPrompt ??= PromptText.Normalize(Meta?.Prompt);
+    public string NormNegative => normNegative ??= PromptText.Normalize(Meta?.NegativePrompt);
+    public string NormModel => normModel ??= PromptText.Normalize(Meta?.Model);
 
     /// <summary>全キャラクターのプロンプトを改行でつないだもの(語がキャラクターをまたいで一致しないように)。</summary>
     public string NormCharPrompts => normCharPrompts ??=
-        Normalize(Meta == null ? null : string.Join("\n", Meta.Characters.Select(c => c.Prompt)));
+        PromptText.Normalize(Meta == null ? null : string.Join("\n", Meta.Characters.Select(c => c.Prompt)));
 
     public string NormCharNegatives => normCharNegatives ??=
-        Normalize(Meta == null ? null : string.Join("\n", Meta.Characters.Select(c => c.Negative)));
+        PromptText.Normalize(Meta == null ? null : string.Join("\n", Meta.Characters.Select(c => c.Negative)));
 
     // ───────── タグの集計用(初回の集計時に1度だけ作って保持する) ─────────
 
     string[]? promptTags, negativeTags, charTags;
 
-    public string[] PromptTags => promptTags ??= TagKeys(Meta?.Prompt);
-    public string[] NegativeTags => negativeTags ??= TagKeys(Meta?.NegativePrompt);
+    public string[] PromptTags => promptTags ??= PromptText.TagKeys(Meta?.Prompt);
+    public string[] NegativeTags => negativeTags ??= PromptText.TagKeys(Meta?.NegativePrompt);
 
     /// <summary>全キャラクターのプロンプトのタグ(キャラクターをまたいで重複を除く)。</summary>
     public string[] CharacterTags => charTags ??=
-        TagKeys(Meta == null ? null : string.Join("\n", Meta.Characters.Select(c => c.Prompt)));
-
-    /// <summary>
-    /// 集計用のタグにする: プロンプトをタグに分け、重みやかっこを外して正規化し、重複を除く。
-    /// (絞り込み欄に入る形と同じなので、そのまま絞り込みに使える)
-    /// </summary>
-    public static string[] TagKeys(string? text)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return Array.Empty<string>();
-        return MainWindow.SplitTags(text)
-            .Select(t => Normalize(MainWindow.CleanTag(t)).Trim())
-            .Where(t => t.Length > 0)
-            .Distinct()
-            .ToArray();
-    }
+        PromptText.TagKeys(Meta == null ? null : string.Join("\n", Meta.Characters.Select(c => c.Prompt)));
 
     bool thumbPending;
 

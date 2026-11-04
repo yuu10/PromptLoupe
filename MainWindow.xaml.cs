@@ -258,7 +258,7 @@ public partial class MainWindow : Window
     {
         filterTerms = (FilterBox.Text ?? "")
             .Split(new[] { ',', '、', '，' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(t => FileItem.Normalize(t).Trim())
+            .Select(t => PromptText.Normalize(t).Trim())
             .Where(t => t.Length > 0)
             .ToArray();
         view?.Refresh();
@@ -266,7 +266,7 @@ public partial class MainWindow : Window
         NotifyTagStats();
     }
 
-    // 検索対象の文字列も語も FileItem.Normalize 済み(小文字・_ はスペース・\ なし)なので、そのまま比べる
+    // 検索対象の文字列も語も PromptText.Normalize 済み(小文字・_ はスペース・\ なし)なので、そのまま比べる
     static bool Has(string s, string term) => s.Contains(term, StringComparison.Ordinal);
 
     bool FilterItem(object o)
@@ -506,65 +506,8 @@ public partial class MainWindow : Window
     {
         panel.Children.Clear();
         if (string.IsNullOrWhiteSpace(text)) return;
-        foreach (var tag in SplitTags(text))
+        foreach (var tag in PromptText.SplitTags(text))
             panel.Children.Add(MakeChip(tag));
-    }
-
-    /// <summary>
-    /// プロンプトをカンマ(と改行)で区切ってタグにする。(…) [...] {...} &lt;...&gt; の中のカンマでは区切らない。
-    /// かっこの数が合わないプロンプトでは、全体が1つのタグにならないよう、かっこを無視して区切り直す。
-    /// </summary>
-    internal static List<string> SplitTags(string text)
-    {
-        var tags = Split(text, respectBrackets: true, out bool balanced);
-        if (!balanced) tags = Split(text, respectBrackets: false, out _);
-        return tags;
-
-        static List<string> Split(string s, bool respectBrackets, out bool balanced)
-        {
-            var list = new List<string>();
-            var sb = new StringBuilder();
-            int depth = 0;
-
-            void Flush()
-            {
-                var t = sb.ToString().Trim();
-                if (t.Length > 0) list.Add(t);
-                sb.Clear();
-            }
-
-            for (int i = 0; i < s.Length; i++)
-            {
-                char c = s[i];
-                if (c == '\\' && i + 1 < s.Length)   // \( \) などのエスケープは、かっことして数えない
-                {
-                    sb.Append(c).Append(s[++i]);
-                    continue;
-                }
-                if (respectBrackets)
-                {
-                    if ("([{<".IndexOf(c) >= 0) depth++;
-                    else if (")]}>".IndexOf(c) >= 0 && depth > 0) depth--;
-                }
-                if ((c == ',' || c == '\n' || c == '\r') && depth == 0) Flush();
-                else sb.Append(c);
-            }
-            Flush();
-            balanced = depth == 0;
-            return list;
-        }
-    }
-
-    /// <summary>絞り込みに入れる形にする: 強調の重み・外側のかっこ・NovelAI の重み表記を取り除く。</summary>
-    internal static string CleanTag(string tag)
-    {
-        var t = tag.Trim();
-        t = Regex.Replace(t, @"^-?\d+(\.\d+)?::", "").Trim();          // NovelAI: 1.2::tag
-        if (t.EndsWith("::", StringComparison.Ordinal)) t = t[..^2].Trim(); // NovelAI: tag::
-        while (t.Length >= 2 && "([{".IndexOf(t[0]) >= 0 && ")]}".IndexOf(t[^1]) >= 0 && t[^2] != '\\')
-            t = t[1..^1].Trim();                                         // (tag:1.2) → tag:1.2
-        t = Regex.Replace(t, @":\s*-?\d+(\.\d+)?$", "").Trim();          // tag:1.2 → tag
-        return t;
     }
 
     Border MakeChip(string tag)
@@ -611,9 +554,9 @@ public partial class MainWindow : Window
     /// <summary>タグを絞り込み欄に追加する。すでに入っているタグなら、外す。</summary>
     internal void ToggleFilterTag(string tag)
     {
-        var clean = CleanTag(tag);
+        var clean = PromptText.CleanTag(tag);
         if (clean.Length == 0) return;
-        var norm = FileItem.Normalize(clean).Trim();
+        var norm = PromptText.Normalize(clean).Trim();
 
         var parts = (FilterBox.Text ?? "")
             .Split(new[] { ',', '、', '，' }, StringSplitOptions.RemoveEmptyEntries)
@@ -621,7 +564,7 @@ public partial class MainWindow : Window
             .Where(p => p.Length > 0)
             .ToList();
 
-        int removed = parts.RemoveAll(p => FileItem.Normalize(p).Trim() == norm);
+        int removed = parts.RemoveAll(p => PromptText.Normalize(p).Trim() == norm);
         if (removed == 0) parts.Add(clean);
 
         FilterBox.Text = string.Join(", ", parts);
