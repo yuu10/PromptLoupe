@@ -1,12 +1,12 @@
 # PromptLoupe
 
-AI生成画像のメタデータを読み取り、それを元に並び替え・絞り込みしながら閲覧できる Windows 用画像ビューア(C# / WPF / .NET 8)。
+AI生成画像のメタデータを読み取り、それを元に並び替え・絞り込みしながら閲覧できる Windows 用画像ビューア(C# / WPF / .NET 10)。
 
 ![PromptLoupe のメイン画面。左にファイル一覧、中央に画像、右にプロンプトのタグやキャラクター別プロンプトのカード](docs/images/main.png)
 
 ## ビルドと実行
 
-.NET 8 SDK が必要です。
+.NET 10 SDK が必要です。
 
 ```
 dotnet run

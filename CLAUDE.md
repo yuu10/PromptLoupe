@@ -1,7 +1,7 @@
 # PromptLoupe(旧名 M Viewer。Claude Code 用メモ)
 
 AI生成画像のメタデータ(プロンプト・パラメーター)を元に、並び替え・絞り込みして閲覧する Windows 用画像ビューア。
-C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` の `<Version>`(現在 1.6.0。1.6.0 で撮影情報(Exif)の表示・撮影日時の並び替え・WebP の EXIF 回転を追加)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
+C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポートが 2026-11-10 に終わるため。更新後の WPF 版の動作は、ユーザーの確認待ち)、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` の `<Version>`(現在 1.6.0。1.6.0 で撮影情報(Exif)の表示・撮影日時の並び替え・WebP の EXIF 回転を追加)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
 
 ## 進め方
 
@@ -9,7 +9,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 - ビルドは `dotnet build`、実行は `dotnet run`。変更したら**必ずビルドして、エラーがないことを確かめる**。
 - テストは `dotnet test PromptLoupe.Tests`(共通部分 `PromptLoupe.Core` だけが対象。画面のテストはない)。テスト用の画像は、テストの中でバイト列から組み立てる(`TestImages.cs` / `ExifBuilder`)。メタデータの読み取りを直したら、テストも足す。
 - CI は GitHub Actions(`.github/workflows/build.yml`)。main と `claude/**` へのプッシュと PR で、Windows で `dotnet build -c Release`、Linux で `dotnet test`、Avalonia 版を Windows・Mac・Linux でビルドする(画面の動作までは確かめない)。
-- クラウド(Linux)のセッションでは、WPF のプロジェクトはビルドできない(Ubuntu の .NET SDK には WindowsDesktop の SDK が入っていない。Microsoft 版の SDK の配布元はネットワークの設定で使えない)。`PromptLoupe.Core` と `PromptLoupe.Tests` はビルド・テストできる。WPF 側を変えたら、push して CI の Windows ビルドで確かめる。SDK は `apt-get install -y dotnet-sdk-8.0` で入れる。
+- クラウド(Linux)のセッションでも、Microsoft 版の SDK なら WPF のプロジェクトを**ビルドできる**(実行はできない): `dotnet build PromptLoupe.csproj -p:EnableWindowsTargeting=true`(2026-11-04 に確認。以前は Microsoft の配布元につながらなかったが、今はつながる)。SDK は `curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh && bash dotnet-install.sh --channel 10.0 --install-dir /root/.dotnet` で入れる(`/usr/local/bin/dotnet` が `/root/.dotnet` を指している)。Ubuntu の `dotnet-sdk-10.0` には WindowsDesktop が入っていないので、WPF はビルドできない。WPF 側を変えたら、ここでビルドしたうえで、push して CI の Windows ビルドでも確かめる。
 - 共通部分を `PromptLoupe.Core/` に切り出した(2026-11-04)。クロスプラットフォーム版(Avalonia)の準備。WPF 版の動きは変えていない。切り出し後の WPF 版で、起動・PNG と JPEG のメタデータ表示・タグの絞り込みと色分けと集計・設定の引き継ぎ・撮影情報・EXIF 回転を、ユーザーが「問題なし」と確認済み(2026-11-04)。ユーザーは JPEG の実物を持っていないので、確認用の JPEG は Pillow で作って渡した(A1111 の UserComment、カメラの Exif と GPS、Orientation 6。生成スクリプトはリポジトリに入れていない)。
 - Avalonia 版(`PromptLoupe.Avalonia/`)を作り始めた(2026-11-04)。方針(ユーザーと決めたこと): いずれ Avalonia 版**一本にする**。WPF 版と並行して育てるのではなく、Avalonia 版が WPF 版と同じことをできるようになるまでの保険として WPF 版を残し、同じになったら WPF 版はやめる。Mac で使う予定がなければ、Mac での動作確認は放置してよい。ただし**確認していない OS 向けには配布しない**(Releases に出さない、README に「対応」と書かない)。Linux はクラウドで確かめる(Avalonia.Headless でスクリーンショット)。Windows での確認はユーザーに頼む。Avalonia は 11.3 系を使う(12 系も出ているが、書き方を確実に知っている 11 系にした)。
 - Avalonia 版はクラウド(Linux)でもビルドできる(`dotnet build PromptLoupe.Avalonia`)。画面の確認は、スクラッチに `Avalonia.Headless` と `Avalonia.Skia` を参照する小さなプログラムを作り、`MainWindow` を表示して `CaptureRenderedFrame()` で PNG に保存する(`UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })` + `UseSkia()`)。日本語のフォントはコンテナに入っている(IPAGothic)。このプログラムはリポジトリに入れていない。
