@@ -10,7 +10,7 @@ C# / WPF / .NET 8、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` 
 - テストは `dotnet test PromptLoupe.Tests`(共通部分 `PromptLoupe.Core` だけが対象。画面のテストはない)。テスト用の画像は、テストの中でバイト列から組み立てる(`TestImages.cs` / `ExifBuilder`)。メタデータの読み取りを直したら、テストも足す。
 - CI は GitHub Actions(`.github/workflows/build.yml`)。main と `claude/**` へのプッシュと PR で、Windows で `dotnet build -c Release`、Linux で `dotnet test` を実行する。
 - クラウド(Linux)のセッションでは、WPF のプロジェクトはビルドできない(Ubuntu の .NET SDK には WindowsDesktop の SDK が入っていない。Microsoft 版の SDK の配布元はネットワークの設定で使えない)。`PromptLoupe.Core` と `PromptLoupe.Tests` はビルド・テストできる。WPF 側を変えたら、push して CI の Windows ビルドで確かめる。SDK は `apt-get install -y dotnet-sdk-8.0` で入れる。
-- 共通部分を `PromptLoupe.Core/` に切り出した(2026-11-04)。クロスプラットフォーム版(Avalonia)の準備。WPF 版の動きは変えていない。
+- 共通部分を `PromptLoupe.Core/` に切り出した(2026-11-04)。クロスプラットフォーム版(Avalonia)の準備。WPF 版の動きは変えていない。切り出し後の WPF 版で、起動・PNG と JPEG のメタデータ表示・タグの絞り込みと色分けと集計・設定の引き継ぎ・撮影情報・EXIF 回転を、ユーザーが「問題なし」と確認済み(2026-11-04)。ユーザーは JPEG の実物を持っていないので、確認用の JPEG は Pillow で作って渡した(A1111 の UserComment、カメラの Exif と GPS、Orientation 6。生成スクリプトはリポジトリに入れていない)。
 - リリースは `.github/workflows/release.yml`。`v*` のタグを push すると、自己完結型・単一 exe(圧縮あり、約 73MB)を zip にして Releases に**下書き**で作る。タグと `<Version>` が違うと失敗する。公開は人が GitHub の画面で行う。
 - 画面の見た目やドラッグ操作などは、実行しても確認しきれない。ユーザーに確認してもらう項目として、作業の最後に挙げる。
 - 1.4.3(1.4.2 で JPEG の EXIF 回転、1.4.3 で HEIC の表示)まで、ユーザーが「動作は問題なし」と確認済み(2026-11-01)。
