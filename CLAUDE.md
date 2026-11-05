@@ -1,7 +1,7 @@
 # PromptLoupe(旧名 M Viewer。Claude Code 用メモ)
 
 AI生成画像のメタデータ(プロンプト・パラメーター)を元に、並び替え・絞り込みして閲覧する Windows 用画像ビューア。
-C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポートが 2026-11-10 に終わるため。更新後の WPF 版の動作は、ユーザーが「問題なさそう」と確認(2026-11-05))、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` の `<Version>`(現在 1.6.0。1.6.0 で撮影情報(Exif)の表示・撮影日時の並び替え・WebP の EXIF 回転を追加)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
+C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポートが 2026-11-10 に終わるため。更新後の WPF 版の動作は、ユーザーが「問題なさそう」と確認(2026-11-05))、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` の `<Version>`(現在 1.7.0。1.7.0 で .NET 10 に更新し、ほかのアプリでの移動・削除・名前変更を一覧に反映するようにした。1.6.0 で撮影情報(Exif)の表示・撮影日時の並び替え・WebP の EXIF 回転を追加)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
 
 ## 進め方
 
@@ -13,7 +13,7 @@ C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポート�
 - 共通部分を `PromptLoupe.Core/` に切り出した(2026-11-04)。クロスプラットフォーム版(Avalonia)の準備。WPF 版の動きは変えていない。切り出し後の WPF 版で、起動・PNG と JPEG のメタデータ表示・タグの絞り込みと色分けと集計・設定の引き継ぎ・撮影情報・EXIF 回転を、ユーザーが「問題なし」と確認済み(2026-11-04)。ユーザーは JPEG の実物を持っていないので、確認用の JPEG は Pillow で作って渡した(A1111 の UserComment、カメラの Exif と GPS、Orientation 6。生成スクリプトはリポジトリに入れていない)。
 - Avalonia 版(`PromptLoupe.Avalonia/`)を作り始めた(2026-11-04)。方針(ユーザーと決めたこと): いずれ Avalonia 版**一本にする**。WPF 版と並行して育てるのではなく、Avalonia 版が WPF 版と同じことをできるようになるまでの保険として WPF 版を残し、同じになったら WPF 版はやめる。Mac で使う予定がなければ、Mac での動作確認は放置してよい。ただし**確認していない OS 向けには配布しない**(Releases に出さない、README に「対応」と書かない)。Linux はクラウドで確かめる(Avalonia.Headless でスクリーンショット)。Windows での確認はユーザーに頼む。Avalonia は 11.3 系を使う(12 系も出ているが、書き方を確実に知っている 11 系にした)。
 - Avalonia 版はクラウド(Linux)でもビルドできる(`dotnet build PromptLoupe.Avalonia`)。画面の確認は、スクラッチに `Avalonia.Headless` と `Avalonia.Skia` を参照する小さなプログラムを作り、`MainWindow` を表示して `CaptureRenderedFrame()` で PNG に保存する(`UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })` + `UseSkia()`)。日本語のフォントはコンテナに入っている(IPAGothic)。このプログラムはリポジトリに入れていない。
-- リリースは `.github/workflows/release.yml`。`v*` のタグを push すると、自己完結型・単一 exe(圧縮あり、約 73MB)を zip にして Releases に**下書き**で作る。タグと `<Version>` が違うと失敗する。公開は人が GitHub の画面で行う。
+- リリースは `.github/workflows/release.yml`。`v*` のタグを push すると、自己完結型・単一 exe(圧縮あり、.NET 10 で約 62MB)を zip にして Releases に**下書き**で作る。タグと `<Version>` が違うと失敗する。公開は人が GitHub の画面で行う。
 - 画面の見た目やドラッグ操作などは、実行しても確認しきれない。ユーザーに確認してもらう項目として、作業の最後に挙げる。
 - 1.4.3(1.4.2 で JPEG の EXIF 回転、1.4.3 で HEIC の表示)まで、ユーザーが「動作は問題なし」と確認済み(2026-11-01)。
 - 1.6.0(撮影情報(Exif)カード、GPS の表示設定、撮影日時の並び替え、HEIC の Exif 読み取り)も、ユーザーが「問題なし」と確認済み(2026-11-02)。
@@ -38,7 +38,7 @@ C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポート�
 | `MainWindow.xaml` / `.cs` | 画面、閲覧、絞り込み、メタデータ表示、ズーム |
 | `MainWindow.FileOps.cs` | 左パネルのファイル操作と、一覧からのドラッグ持ち出し |
 | `MainWindow.Fullscreen.cs` | 全画面表示(F11 / Esc) |
-| `MainWindow.Watcher.cs` / `FileChanges.cs`(Core) | 開いているフォルダの見張り(`FileSystemWatcher`)。ほかのアプリでの移動・削除・名前変更を一覧に反映する(2026-11-05。切り取ってエクスプローラーに貼り付けると、一覧に古い項目が残る不具合への対応)。通知は 300ms ためてから `FileChanges.Map` で読み替える。消えたはずのファイルが残っていれば何もしない(保存時に消して戻すアプリのため)。表示中でない画像が消えても、見ている画像は切り替えない。新しく増えた画像は加えない。Avalonia 版にも同じものがある(Linux で動作確認済み) |
+| `MainWindow.Watcher.cs` / `FileChanges.cs`(Core) | 開いているフォルダの見張り(`FileSystemWatcher`)。ほかのアプリでの移動・削除・名前変更を一覧に反映する(2026-11-05。切り取ってエクスプローラーに貼り付けると、一覧に古い項目が残る不具合への対応)。ユーザーが WPF 版で、切り取り→エクスプローラーへ貼り付け、エクスプローラーでの削除・名前変更、Shift+ドラッグでの移動を確認し「問題なし」(2026-11-05)。通知は 300ms ためてから `FileChanges.Map` で読み替える。消えたはずのファイルが残っていれば何もしない(保存時に消して戻すアプリのため)。表示中でない画像が消えても、見ている画像は切り替えない。新しく増えた画像は加えない。Avalonia 版にも同じものがある(Linux で動作確認済み) |
 | `MainWindow.Tags.cs` / `TagDictionary.cs`(Core) | タグの色分けと、Danbooru 辞書(danbooru.csv)の読み込み |
 | `RenameWindow.xaml(.cs)` | 名前の変更ダイアログ |
 | `TagStatsWindow.xaml(.cs)` / `MainWindow.TagStats.cs` | タグの集計(使っている画像の枚数)。一覧や絞り込みが変わると `NotifyTagStats` で数え直す(300ms 間引き) |
