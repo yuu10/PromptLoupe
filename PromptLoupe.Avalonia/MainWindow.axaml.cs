@@ -72,6 +72,11 @@ public partial class MainWindow : Window
         FmReveal.Header = $"{PlatformShell.FileManagerName}で表示(_E)";
         TagStatsMenu.InputGesture = new KeyGesture(Key.T, CommandKey);
         FmDelete.InputGesture = OperatingSystem.IsMacOS() ? new KeyGesture(Key.Back, KeyModifiers.Meta) : new KeyGesture(Key.Delete);
+        FmCut.InputGesture = new KeyGesture(Key.X, CommandKey);
+        FmCopy.InputGesture = new KeyGesture(Key.C, CommandKey);
+        FmPaste.InputGesture = new KeyGesture(Key.V, CommandKey);
+        FmCopyPath.InputGesture = new KeyGesture(Key.C, CommandKey | KeyModifiers.Shift);
+        FmProps.IsVisible = FmPropsSeparator.IsVisible = PlatformShell.CanShowProperties;
 
         UpdateTagDictStatus();
         UpdateViewModeButtons();
@@ -84,6 +89,7 @@ public partial class MainWindow : Window
         AddHandler(KeyDownEvent, Window_KeyDown, RoutingStrategies.Tunnel);
         AddHandler(DragDrop.DragOverEvent, Window_DragOver);
         AddHandler(DragDrop.DropEvent, Window_Drop);
+        SetupFileListDrag();
         Viewport.PointerWheelChanged += Viewport_PointerWheelChanged;
         Viewport.PointerPressed += Viewport_PointerPressed;
         Viewport.PointerMoved += Viewport_PointerMoved;
@@ -892,6 +898,23 @@ public partial class MainWindow : Window
 
     void Exit_Click(object? sender, RoutedEventArgs e) => Close();
 
+    HelpWindow? helpWindow;
+
+    void Help_Click(object? sender, RoutedEventArgs e) => ShowHelp();
+
+    /// <summary>使い方を開く。すでに開いていれば前面に出す(ウィンドウを増やさない)。</summary>
+    void ShowHelp()
+    {
+        if (helpWindow != null)
+        {
+            helpWindow.Activate();
+            return;
+        }
+        helpWindow = new HelpWindow();
+        helpWindow.Closed += (_, _) => helpWindow = null;
+        helpWindow.Show(this);
+    }
+
     async void About_Click(object? sender, RoutedEventArgs e)
     {
         var asm = typeof(App).Assembly;
@@ -913,11 +936,13 @@ public partial class MainWindow : Window
 
     void Window_DragOver(object? sender, DragEventArgs e)
     {
-        e.DragEffects = e.DataTransfer.Contains(DataFormat.File) ? DragDropEffects.Copy : DragDropEffects.None;
+        // 一覧から持ち出すドラッグが、自分のウィンドウの上にあるときは、落とせない印にする
+        e.DragEffects = !draggingOut && e.DataTransfer.Contains(DataFormat.File) ? DragDropEffects.Copy : DragDropEffects.None;
     }
 
     void Window_Drop(object? sender, DragEventArgs e)
     {
+        if (draggingOut) return; // 一覧から持ち出すドラッグが、自分のウィンドウに落ちたときは開き直さない
         var first = e.DataTransfer.TryGetFiles()?.Select(f => f.TryGetLocalPath()).FirstOrDefault(p => p != null);
         if (first != null) OpenPath(first);
     }
@@ -953,6 +978,12 @@ public partial class MainWindow : Window
         var mod = e.KeyModifiers;
         var cmd = CommandKey;
 
+        if (e.Key == Key.F1)
+        {
+            ShowHelp();
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.F11)
         {
             ToggleFullscreen();
@@ -972,11 +1003,18 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (FocusManager?.GetFocusedElement() is TextBox) return;
+        var focused = FocusManager?.GetFocusedElement();
+        if (focused is TextBox) return;
+        // 右パネルの文字を選んでいるときの Ctrl+C は、その文字のコピーに任せる
+        if (focused is SelectableTextBlock { SelectedText.Length: > 0 } && mod == cmd && e.Key == Key.C) return;
 
         // ファイル操作
         bool handled = true;
-        if (mod == (cmd | KeyModifiers.Shift) && e.Key == Key.C) CopyPaths();
+        if (mod == cmd && e.Key == Key.C) CopyFiles(cut: false);
+        else if (mod == cmd && e.Key == Key.X) CopyFiles(cut: true);
+        else if (mod == cmd && e.Key == Key.V) PasteFiles();
+        else if (mod == (cmd | KeyModifiers.Shift) && e.Key == Key.C) CopyPaths();
+        else if (PlatformShell.CanShowProperties && mod == KeyModifiers.Alt && e.Key == Key.Enter) ShowProperties();
         else if (mod == KeyModifiers.None && e.Key == Key.F2) RenameSelected();
         else if (mod == KeyModifiers.None && e.Key == Key.Delete) DeleteSelected();
         else if (OperatingSystem.IsMacOS() && mod == KeyModifiers.Meta && e.Key == Key.Back) DeleteSelected(); // Mac の「ゴミ箱に入れる」

@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="PromptLoupe.HelpWindow"
+        Title="PromptLoupe - 使い方" Icon="avares://PromptLoupe/Assets/app.ico"
+        Width="760" Height="720" MinWidth="480" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
+    <!--
+      使い方マニュアル。WPF 版の FlowDocument の代わりに、Help.txt(簡単な書き方の文章)を読んで、
+      見出し・段落・箇条書きの部品を並べる(HelpWindow.axaml.cs)。
+    -->
+    <Window.Styles>
+        <Style Selector="SelectableTextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="LineHeight" Value="22" />
+        </Style>
+        <Style Selector="SelectableTextBlock.h1">
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LineHeight" Value="NaN" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+        <Style Selector="Border.h2">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="0,0,0,3" />
+            <Setter Property="Margin" Value="0,22,0,6" />
+        </Style>
+        <Style Selector="Border.h2 > SelectableTextBlock">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LineHeight" Value="NaN" />
+        </Style>
+        <Style Selector="SelectableTextBlock.lead">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+        <Style Selector="SelectableTextBlock.body">
+            <Setter Property="Margin" Value="0,4" />
+        </Style>
+        <Style Selector="SelectableTextBlock.indent">
+            <Setter Property="Margin" Value="24,0,0,4" />
+        </Style>
+        <Style Selector="Border.note">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Margin" Value="0,6,0,4" />
+        </Style>
+        <Style Selector="Grid.bullet">
+            <Setter Property="Margin" Value="14,1,0,1" />
+        </Style>
+    </Window.Styles>
+
+    <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel x:Name="Body" Margin="24,16,24,24" MaxWidth="1000" HorizontalAlignment="Left" />
+    </ScrollViewer>
+</Window>

@@ -46,7 +46,9 @@ C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポート�
 | `PromptLoupe.Core/NaturalComparer.cs` | 自然順の比較(`StrCmpLogicalW` の代わり。Avalonia 版で使う。WPF 版は `StrCmpLogicalW` のまま) |
 | `PromptLoupe.Avalonia/` | Avalonia 版(開発中)。WPF 版と同じ名前のファイルは同じ役割で、中身は WPF 版から移したもの |
 | `PromptLoupe.Avalonia/ImageLoader.cs` | 画像の読み込み(SkiaSharp。WIC の代わり)と、JPEG・WebP の EXIF 回転。読めるのは PNG・JPEG・WebP・BMP・GIF。HEIC・TIFF は表示できない |
-| `PromptLoupe.Avalonia/PlatformShell.cs` | 既定のアプリで開く・ファイルマネージャーで表示・ごみ箱(Windows は VisualBasic、Mac は osascript で Finder、Linux は `gio trash`、なければ freedesktop の決まりで自前) |
+| `PromptLoupe.Avalonia/PlatformShell.cs` | 既定のアプリで開く・ファイルマネージャーで表示・ごみ箱(Windows は VisualBasic、Mac は osascript で Finder、Linux は `gio trash`、なければ freedesktop の決まりで自前)・プロパティ(Windows のみ。WPF 版と同じ `ShellExecuteEx`。ほかの OS ではメニューに出さない) |
+| `PromptLoupe.Avalonia/FileClipboard.cs` | ファイルと画像のクリップボード(Avalonia 11.3 の `DataTransfer`)。切り取りの印は、Windows は「Preferred DropEffect」、Linux は `x-special/gnome-copied-files` と `application/x-kde-cutselection`、どの OS でもアプリ用の `PromptLoupe.cut`。Windows は入れたあとで `FlushAsync`(アプリを閉じても残す) |
+| `PromptLoupe.Avalonia/HelpWindow.axaml(.cs)` / `Help.txt` | 使い方(`FlowDocument` の代わり)。本文は埋め込みリソースの `Help.txt`(見出し・箇条書き・**太字**・`コード` だけの簡単な書き方。書き方はファイルの先頭)。WPF 版の `HelpWindow.xaml` と同じ内容にし、Avalonia 版で違うところ・使えない機能を書き換えている。WPF 版の使い方を直したら、こちらも直す |
 | `PromptLoupe.Avalonia/MessageDialog.cs` | MessageBox の代わり(Avalonia には標準のものがない) |
 
 ## 守ること・落とし穴
@@ -62,7 +64,14 @@ C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポート�
 - タグ辞書は、アプリに**同梱しない**(ライセンス未確認)。利用者が読み込む。
 - WebP の表示は、Windows の「WebP 画像拡張機能」に依存する(メタデータの読み取りには不要)。HEIC(1.4.3〜)は「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」に依存する。案内文は `CodecHint`。
 - 編集の前には、ファイルを読み直す。
-- Avalonia 版の落とし穴: `ColumnDefinition` や `ScaleTransform` に `x:Name` を付けても、コードから使うフィールドはできない(コントロールではないため)。列は `BodyGrid.ColumnDefinitions[i]`、変換はコードで作って付ける。`ListBox` の `ItemsSource` を差し替えても前の選択が残ることがあるので、`Selection.Clear()` してから選び直す(`RefreshView`)。WPF の `ListCollectionView` はないので、絞り込みと並び替えは `RefreshView` で一覧を作り直す。`Image` の `RenderTransformOrigin` の既定は中央なので `0,0` にする。`DragEventArgs.Data` は古い書き方で、`DataTransfer` を使う。チェック付きのメニュー(`ToggleType`)は、クリックの処理で設定から `IsChecked` を付け直す(自動で切り替わるかどうかに頼らない)。
+- Avalonia 版の落とし穴: `ColumnDefinition` や `ScaleTransform` に `x:Name` を付けても、コードから使うフィールドはできない(コントロールではないため)。列は `BodyGrid.ColumnDefinitions[i]`、変換はコードで作って付ける。`ListBox` の `ItemsSource` を差し替えても前の選択が残ることがあるので、`Selection.Clear()` してから選び直す(`RefreshView`)。WPF の `ListCollectionView` はないので、絞り込みと並び替えは `RefreshView` で一覧を作り直す。`Image` の `RenderTransformOrigin` の既定は中央なので `0,0` にする。`DragEventArgs.Data` は古い書き方で、`DataTransfer` を使う。クリップボードも `DataTransfer` / `DataTransferItem` と `ClipboardExtensions`(`TryGetFilesAsync`・`SetBitmapAsync`・`DataFormat.CreateBytesPlatformFormat` など)を使う。`IStorageFile` は自分で実装できない(`NotClientImplementable`)ので、パスからは `StorageProvider.TryGetFileFromPathAsync` で作る(デスクトップではすぐ終わる)。チェック付きのメニュー(`ToggleType`)は、クリックの処理で設定から `IsChecked` を付け直す(自動で切り替わるかどうかに頼らない)。
+- Avalonia 11.3.22 の、OS ごとのクリップボードとドラッグ(2026-11-05、パッケージの中身を逆コンパイルして確認):
+  - クリップボードのファイルは、Windows は CF_HDROP、Linux(X11)は `text/uri-list`、Mac は `public.file-url`。画像(`DataFormat.Bitmap`)は、Windows は DIB・DIBV5・PNG、Linux は `image/png`、Mac は PNG。任意の形式は `CreateBytesPlatformFormat`(Windows は `RegisterClipboardFormat` の名前、Linux は MIME、Mac は UTI)。
+  - Mac の Finder には、クリップボードで「移動」を伝える決まりがない。Finder に貼り付けるとコピーになる(このアプリの中で貼り付けたときだけ移動)。
+  - **ほかのアプリへのドラッグは、Windows(OLE の `DoDragDrop`)と Mac だけ**。Linux(X11)にはドラッグ元の実装がなく、アプリの中だけのドラッグ(`InProcessDragSource`)になるので、Linux では一覧からの持ち出しを始めない(`CanDragOut`)。
+  - 一覧の項目の選択は `ListBoxItem.OnPointerPressed`(押した時点)で変わる。複数選択のうち1枚をつかんでドラッグできるように、`FileList` にトンネルで `PointerPressed` を付け、その場合だけ `Handled` にして選択を変えない(離したときに1枚だけにする。WPF 版の `pendingSingle` と同じ)。
+  - Windows の Avalonia はキーの表示名を持たず、`KeyGesture` の Enter が「Return」と表示される。そのため、プロパティのメニューには Alt+Enter を出していない(キーは効く)。
+  - Headless のクリップボードはメモリ上の仮のもの(アプリの処理は確かめられるが、OS との連携は確かめられない)。Xvfb で X11 のクリップボードを2つのプロセスで受け渡す確認も試したが、文字だけでも受け渡せなかった(この環境の問題と判断。2026-11-05)。
 
 ## 既知の制限・未対応
 
@@ -71,5 +80,7 @@ C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポート�
 
 ## 次にやること(候補)
 
-1. Avalonia 版を WPF 版と同じにする(2026-11-04 に第1段階: 一覧・サムネイル・絞り込み・並び替え・画像表示とズーム・メタデータのカード・タグの色分けと辞書・タグの集計・名前の変更・ごみ箱への削除・全画面・テーマ・設定)。Linux ではスクリーンショットで確認済み。Windows でもユーザーが確認し「全体的に問題ない」(2026-11-05。`dotnet run` のデバッグ版で)。確認用の JPEG・WebP(Orientation 1〜8 の JPEG・WebP、A1111 の UserComment の JPEG、カメラの Exif と GPS で Orientation 6 の JPEG、計 18 枚。Pillow で作成、リポジトリには入れていない)も問題なし。ただし「動作がちょっと重い気がした」(5,600 枚、830×1210 程度のフォルダ)。ユーザーが様子を見ている。読み込み自体は速い(1792×2304 の PNG で表示用 約 90ms、サムネイル 約 75ms。Linux・Release で計測)。重いと感じた操作が分かったら調べる。残り: 一覧からのドラッグ持ち出し、ファイルのコピー・切り取り・貼り付け(クリップボードのファイル)、画像のコピー、プロパティ(Windows のみ)、使い方の画面(`FlowDocument` の代わり)、HEIC・TIFF の表示(別のライブラリが要る。ライセンスと配布サイズを調べる)、Avalonia 版のライセンス表記(Avalonia・SkiaSharp・HarfBuzzSharp・Tmds.DBus.Protocol・MicroCom。SkiaSharp の THIRD-PARTY-NOTICES は約 2,700 行)、配布(release.yml)。Mac はユーザーの MacBook Pro 2016(Intel、macOS 12 まで)で確認できるが、Mac で使う予定がなければ放置してよい。Mac の配布は署名・公証がないと Gatekeeper に強く止められる。
+- 1.7.0 を 2026-11-05 にリリースした(ユーザーが公開)。
+
+1. Avalonia 版を WPF 版と同じにする(2026-11-04 に第1段階: 一覧・サムネイル・絞り込み・並び替え・画像表示とズーム・メタデータのカード・タグの色分けと辞書・タグの集計・名前の変更・ごみ箱への削除・全画面・テーマ・設定)。Linux ではスクリーンショットで確認済み。Windows でもユーザーが確認し「全体的に問題ない」(2026-11-05。`dotnet run` のデバッグ版で)。確認用の JPEG・WebP(Orientation 1〜8 の JPEG・WebP、A1111 の UserComment の JPEG、カメラの Exif と GPS で Orientation 6 の JPEG、計 18 枚。Pillow で作成、リポジトリには入れていない)も問題なし。ただし「動作がちょっと重い気がした」(5,600 枚、830×1210 程度のフォルダ)。ユーザーが様子を見ている。読み込み自体は速い(1792×2304 の PNG で表示用 約 90ms、サムネイル 約 75ms。Linux・Release で計測)。重いと感じた操作が分かったら調べる。第2段階(2026-11-05): 一覧からのドラッグ持ち出し(Windows・Mac。Linux は Avalonia が未対応)、ファイルのコピー・切り取り・貼り付け、画像のコピー、プロパティ(Windows のみ)、使い方の画面(`Help.txt`)。Linux の Headless で、コピー・切り取り・貼り付け(同じ名前は「名前 (2)」、移動のあとはクリップボードを空にする)、画像のコピー、使い方の画面(スクリーンショット)、プロパティがメニューに出ないことを確認した。Windows でもユーザーが確認し「問題なし」(2026-11-05): 使い方(F1・Esc・テーマ)、右クリックメニュー、プロパティ(Alt+Enter)、画像のコピー(アプリを閉じたあとも貼り付けられる)、右パネルの文字の Ctrl+C、エクスプローラーとのコピー・切り取り・貼り付け(「名前 (2)」を含む)、ドラッグ持ち出し(Shift で移動、複数選択の1枚をつかむ、自分のウィンドウへのドロップを無視)。確認中に「上位と下位の同じ名前のファイルが片方しか出ない」ように見えたが、貼り付けで増えたファイルが一覧に加わっていなかっただけだった(新しく増えた画像は加えない仕様。不具合ではない)。Linux・Mac の OS のクリップボード・ファイルマネージャーとの連携は未確認。残り: HEIC・TIFF の表示(別のライブラリが要る。ライセンスと配布サイズを調べる)、Avalonia 版のライセンス表記(Avalonia・SkiaSharp・HarfBuzzSharp・Tmds.DBus.Protocol・MicroCom。SkiaSharp の THIRD-PARTY-NOTICES は約 2,700 行)、配布(release.yml)。Mac はユーザーの MacBook Pro 2016(Intel、macOS 12 まで)で確認できるが、Mac で使う予定がなければ放置してよい。Mac の配布は署名・公証がないと Gatekeeper に強く止められる。
 2. 配布の準備。コード署名は**しない方針**(2026-11-01 決定。費用に見合わず、OV・EV 証明書でも SmartScreen の警告はすぐには消えないため)。README に SmartScreen の回避方法を書いた。警告が問題になってきたら、Microsoft Store(MSIX、Store 側で署名)か SignPath Foundation(OSS 向けの無料署名)を検討する。名前は PromptLoupe に決定(Web・GitHub・J-PlatPat で同名なし、2026-11-01 確認。法的な確認ではない)。`LICENSE`(MIT、著作権者 yuto)と `THIRD-PARTY-NOTICES.txt`(ModernWpfUI)は追加済みで、バージョン情報と使い方にも表示している。アイコン(`app.ico`)は、写真と、文字を映す虫眼鏡の絵(1.6.0 の公開前にタグの絵から変更)。`tools/make_icon.ps1`(WPF で描画し、16〜256px の PNG を詰めた .ico を作る)で生成する。

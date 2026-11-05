@@ -153,6 +153,8 @@
                 </MenuItem>
             </MenuItem>
             <MenuItem Header="ヘルプ(_H)">
+                <MenuItem Header="使い方(_M)..." InputGesture="F1" Click="Help_Click" />
+                <Separator />
                 <MenuItem Header="バージョン情報(_A)..." Click="About_Click" />
             </MenuItem>
         </Menu>
@@ -218,11 +220,22 @@
                             <MenuItem x:Name="FmOpen" Header="既定のアプリで開く(_O)" Click="FileOp_OpenDefault" />
                             <MenuItem x:Name="FmReveal" Header="ファイルマネージャーで表示(_E)" Click="FileOp_Reveal" />
                             <Separator />
+                            <MenuItem x:Name="FmCut" Header="切り取り(_T)" Click="FileOp_Cut" />
+                            <MenuItem x:Name="FmCopy" Header="コピー(_C)" Click="FileOp_Copy" />
+                            <MenuItem x:Name="FmPaste" Header="貼り付け(_V)" Click="FileOp_Paste" />
+                            <Separator />
                             <MenuItem x:Name="FmRename" Header="名前の変更(_M)" InputGesture="F2" Click="FileOp_Rename" />
                             <MenuItem x:Name="FmDelete" Header="削除(_D)" InputGesture="Delete" Click="FileOp_Delete" />
                             <Separator />
                             <MenuItem x:Name="FmCopyPath" Header="ファイルのパスをコピー(_P)" Click="FileOp_CopyPath" />
+                            <MenuItem x:Name="FmCopyImage" Header="画像をコピー(_I)" Click="FileOp_CopyImage" />
                             <MenuItem x:Name="FmCopyPrompt" Header="プロンプトをコピー(_R)" Click="FileOp_CopyPrompt" />
+                            <!--
+                              プロパティは Windows だけ(ほかの OS では、コードで隠す)。キーは Alt+Enter。
+                              InputGesture で出すと、Windows では「Alt+Return」と表示されるので、出さない
+                            -->
+                            <Separator x:Name="FmPropsSeparator" />
+                            <MenuItem x:Name="FmProps" Header="プロパティ(_A)" Click="FileOp_Properties" />
                         </ContextMenu>
                     </ListBox.ContextMenu>
                 </ListBox>

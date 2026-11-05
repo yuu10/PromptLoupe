@@ -37,7 +37,9 @@ dotnet run --project PromptLoupe.Avalonia
 WPF 版との違い(今のところ):
 
 - HEIC・TIFF の画像は表示できません(メタデータと撮影情報は読めます)。WebP は Windows の拡張機能がなくても表示できます
-- 一覧からのドラッグ持ち出し、ファイルのコピー・切り取り・貼り付け、画像のコピー、プロパティ、使い方の画面は、まだありません
+- Linux では、一覧からのドラッグでの持ち出しができません(Avalonia 11.3 が、Linux でほかのアプリへのドラッグに対応していないため)。コピー(Ctrl+C)してファイルマネージャーに貼り付けてください
+- ファイルの切り取り(Ctrl+X)は、Windows はエクスプローラー、Linux は GNOME・KDE のファイルマネージャーに「移動」として伝わります。Mac の Finder には伝わらず、Finder に貼り付けるとコピーになります
+- プロパティは Windows のみです
 - 設定は WPF 版と同じファイルを使います(Windows では `%AppData%\PromptLoupe`、Mac・Linux では `~/.config/PromptLoupe`)
 - Mac のショートカットは Ctrl の代わりに ⌘ です。削除は ⌘+Delete(Backspace)でもできます
 
@@ -128,7 +130,9 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
 
 - WPF 版と同じ名前のファイル(`MainWindow.*`・`FileItem.cs`・`ThumbnailService.cs` など)は、同じ役割
 - `ImageLoader.cs` — 画像の読み込み(SkiaSharp)と、JPEG・WebP の EXIF 回転の補正
-- `PlatformShell.cs` — 既定のアプリで開く・ファイルマネージャーで表示・ごみ箱へ移す(OS ごとの処理)
+- `PlatformShell.cs` — 既定のアプリで開く・ファイルマネージャーで表示・ごみ箱へ移す・プロパティ(OS ごとの処理)
+- `FileClipboard.cs` — ファイルと画像のクリップボード(切り取りの伝え方は OS ごとに違う)
+- `HelpWindow.axaml(.cs)` / `Help.txt` — 使い方マニュアル(本文は `Help.txt`。WPF 版の `HelpWindow.xaml` と同じ内容で、Avalonia 版で違うところを書き換えたもの)
 - `MessageDialog.cs` — メッセージのダイアログ
 
 **ルート**(WPF の画面。Windows 専用)

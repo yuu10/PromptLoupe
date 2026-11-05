@@ -1,10 +1,12 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace PromptLoupe;
 
 /// <summary>
-/// OS ごとに違うファイル操作(既定のアプリで開く・ファイルマネージャーで表示・ごみ箱へ移す)。
+/// OS ごとに違うファイル操作(既定のアプリで開く・ファイルマネージャーで表示・ごみ箱へ移す・プロパティ)。
 /// Windows の処理は WPF 版と同じ。Mac・Linux は、OS に付いているコマンドを使う。
 /// </summary>
 public static class PlatformShell
@@ -103,6 +105,49 @@ public static class PlatformShell
             File.Delete(infoPath);
             throw;
         }
+    }
+
+    // ───────── プロパティ(Windows のみ) ─────────
+
+    /// <summary>この OS で「プロパティ」が使えるか(Windows だけ。Mac・Linux ではメニューに出さない)。</summary>
+    public static bool CanShowProperties => OperatingSystem.IsWindows();
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct ShellExecuteInfo
+    {
+        public int cbSize;
+        public uint fMask;
+        public IntPtr hwnd;
+        public string lpVerb;
+        public string lpFile;
+        public string? lpParameters;
+        public string? lpDirectory;
+        public int nShow;
+        public IntPtr hInstApp;
+        public IntPtr lpIDList;
+        public string? lpClass;
+        public IntPtr hkeyClass;
+        public uint dwHotKey;
+        public IntPtr hIcon;
+        public IntPtr hProcess;
+    }
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    static extern bool ShellExecuteEx(ref ShellExecuteInfo info);
+
+    /// <summary>Windows 標準の「プロパティ」画面を開く(WPF 版と同じ)。開けなかったら false。</summary>
+    [SupportedOSPlatform("windows")]
+    public static bool ShowProperties(string path)
+    {
+        var info = new ShellExecuteInfo
+        {
+            cbSize = Marshal.SizeOf<ShellExecuteInfo>(),
+            fMask = 0x0000000C, // SEE_MASK_INVOKEIDLIST
+            lpVerb = "properties",
+            lpFile = path,
+            nShow = 1
+        };
+        return ShellExecuteEx(ref info);
     }
 
     // ───────── コマンドの実行 ─────────
