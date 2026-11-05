@@ -2,7 +2,7 @@
 
   <!-- 共通部分(PromptLoupe.Core)のテスト。Linux・Mac でも dotnet test で実行できる -->
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>

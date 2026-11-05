@@ -1,0 +1,395 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:PromptLoupe"
+        x:Class="PromptLoupe.MainWindow"
+        Title="PromptLoupe" Icon="avares://PromptLoupe/Assets/app.ico"
+        Width="1400" Height="840" MinWidth="900" MinHeight="520"
+        DragDrop.AllowDrop="True">
+    <Window.Resources>
+        <x:Double x:Key="ThumbSize">64</x:Double>
+
+        <!-- パラメーターの1行(名前 + 値) -->
+        <DataTemplate x:Key="ParamRow" x:DataType="local:KeyValue">
+            <Grid Margin="0,2" ColumnDefinitions="104,*">
+                <TextBlock Text="{Binding Key}" Classes="muted" TextTrimming="CharacterEllipsis"
+                           ToolTip.Tip="{Binding Key}" VerticalAlignment="Top" />
+                <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- 一覧の項目: サムネイルなし -->
+        <DataTemplate x:Key="TextItemTemplate" x:DataType="local:FileItem">
+            <StackPanel Margin="2,3" ToolTip.Tip="{Binding Path}">
+                <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Summary}" FontSize="11" Classes="muted" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- 一覧の項目: サムネイルあり(大きさは設定で変わる ThumbSize を参照) -->
+        <DataTemplate x:Key="ThumbItemTemplate" x:DataType="local:FileItem">
+            <DockPanel Margin="2,3" ToolTip.Tip="{Binding Path}">
+                <Border DockPanel.Dock="Left" Width="{DynamicResource ThumbSize}" Height="{DynamicResource ThumbSize}"
+                        CornerRadius="4" ClipToBounds="True" Background="#2A2A2A">
+                    <Image Source="{Binding Thumbnail}" Stretch="Uniform"
+                           RenderOptions.BitmapInterpolationMode="HighQuality" />
+                </Border>
+                <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Summary}" FontSize="11" Classes="muted" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </DockPanel>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Window.Styles>
+        <!-- 補足の文字(薄い色) -->
+        <Style Selector="TextBlock.muted">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+        </Style>
+        <!-- 右パネルのカード -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+        </Style>
+        <!-- カードの見出し -->
+        <Style Selector="TextBlock.header">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <!-- カードの見出しを兼ねる、最小化 / 展開のボタン(枠も背景もない見た目) -->
+        <Style Selector="Button.toggle">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="2,3" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+        </Style>
+        <!-- カードの中の小さなボタン -->
+        <Style Selector="Button.small">
+            <Setter Property="Padding" Value="10,3" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="MinHeight" Value="0" />
+        </Style>
+        <Style Selector="Button.bold">
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <!-- 折りたたみ欄(全文を表示など)。標準の見た目は大きいので、見出しを小さくする -->
+        <Style Selector="Expander /template/ ToggleButton#ExpanderHeader">
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="Padding" Value="10,2" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <!-- タグのチップ -->
+        <Style Selector="Border.chip">
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="9,3,9,4" />
+            <Setter Property="Margin" Value="0,0,5,5" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+        <Style Selector="Border.chip.plain">
+            <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+        </Style>
+        <Style Selector="Border.chip.plain:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListAccentLowBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- ───── メニュー ───── -->
+        <Menu x:Name="MainMenu" Grid.Row="0">
+            <MenuItem Header="ファイル(_F)">
+                <MenuItem Header="フォルダを開く(_O)..." Click="OpenFolder_Click" />
+                <MenuItem Header="画像を開く(_I)..." Click="OpenFile_Click" />
+                <Separator />
+                <MenuItem Header="終了(_X)" Click="Exit_Click" />
+            </MenuItem>
+            <MenuItem Header="表示(_V)">
+                <MenuItem Header="全画面表示(_F)" InputGesture="F11" Click="Fullscreen_Click" />
+                <MenuItem x:Name="TagStatsMenu" Header="タグの集計(_T)..." Click="TagStats_Click" />
+            </MenuItem>
+            <MenuItem Header="設定(_S)">
+                <MenuItem x:Name="ThemeMenu" Header="テーマ(_H)">
+                    <MenuItem Header="OS の設定に合わせる" Tag="System" ToggleType="Radio" GroupName="theme" Click="Theme_Click" />
+                    <MenuItem Header="ダーク" Tag="Dark" ToggleType="Radio" GroupName="theme" Click="Theme_Click" />
+                    <MenuItem Header="ライト" Tag="Light" ToggleType="Radio" GroupName="theme" Click="Theme_Click" />
+                </MenuItem>
+                <Separator />
+                <MenuItem x:Name="ThumbMenu" Header="サムネイルを表示(_T)" ToggleType="CheckBox" Click="Thumb_Click" />
+                <MenuItem x:Name="ThumbSizeMenu" Header="サムネイルの大きさ(_Z)">
+                    <MenuItem Header="小" Tag="48" ToggleType="Radio" GroupName="thumb" Click="ThumbSize_Click" />
+                    <MenuItem Header="中" Tag="64" ToggleType="Radio" GroupName="thumb" Click="ThumbSize_Click" />
+                    <MenuItem Header="大" Tag="96" ToggleType="Radio" GroupName="thumb" Click="ThumbSize_Click" />
+                </MenuItem>
+                <Separator />
+                <MenuItem x:Name="SubfolderMenu" Header="サブフォルダの読み込み(_R)">
+                    <MenuItem Header="含めない" Tag="0" ToggleType="Radio" GroupName="depth" Click="SubfolderDepth_Click" />
+                    <MenuItem Header="1階層まで" Tag="1" ToggleType="Radio" GroupName="depth" Click="SubfolderDepth_Click" />
+                    <MenuItem Header="2階層まで" Tag="2" ToggleType="Radio" GroupName="depth" Click="SubfolderDepth_Click" />
+                    <MenuItem Header="3階層まで" Tag="3" ToggleType="Radio" GroupName="depth" Click="SubfolderDepth_Click" />
+                    <MenuItem Header="無制限" Tag="-1" ToggleType="Radio" GroupName="depth" Click="SubfolderDepth_Click" />
+                </MenuItem>
+                <Separator />
+                <MenuItem x:Name="ShowGpsMenu" Header="撮影情報の位置情報(GPS)を表示する(_L)" ToggleType="CheckBox"
+                          Click="ShowGps_Click"
+                          ToolTip.Tip="写真に記録された緯度・経度を、撮影情報(Exif)に表示します(既定はオフ)" />
+                <Separator />
+                <MenuItem Header="ファイル操作(_D)">
+                    <MenuItem x:Name="AllowDeleteMenu" Header="削除を許可する" ToggleType="CheckBox" Click="AllowDelete_Click"
+                              ToolTip.Tip="オフのあいだは、削除の操作ができません(誤って消さないための安全装置)" />
+                    <MenuItem x:Name="ConfirmDeleteMenu" Header="削除の前に確認する" ToggleType="CheckBox" Click="ConfirmDelete_Click" />
+                </MenuItem>
+                <MenuItem Header="タグの色分け(_G)">
+                    <MenuItem x:Name="TagColorMenu" Header="色分けする" ToggleType="CheckBox" Click="TagColor_Click" />
+                    <Separator />
+                    <MenuItem Header="タグ辞書(danbooru.csv)を読み込む..." Click="LoadTagDict_Click" />
+                    <MenuItem Header="タグ辞書を外す" Click="RemoveTagDict_Click" />
+                    <Separator />
+                    <MenuItem x:Name="TagDictStatus" Header="辞書: 未読み込み" IsEnabled="False" />
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="ヘルプ(_H)">
+                <MenuItem Header="バージョン情報(_A)..." Click="About_Click" />
+            </MenuItem>
+        </Menu>
+
+        <!-- ───── 絞り込み(ウィンドウの右端まで伸ばす) ───── -->
+        <Grid x:Name="FilterRow" Grid.Row="1" Margin="10,6,10,6" ColumnDefinitions="Auto,*">
+            <Button x:Name="FilterTargetButton" Grid.Column="0" Content="検索対象 ▾" Margin="0,0,8,0"
+                    ToolTip.Tip="絞り込みで検索する項目を選択">
+                <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedLeft">
+                        <StackPanel Spacing="2">
+                            <CheckBox x:Name="TgtFileName" Content="ファイル名" IsCheckedChanged="FilterTarget_Changed" />
+                            <CheckBox x:Name="TgtPrompt" Content="プロンプト" IsCheckedChanged="FilterTarget_Changed" />
+                            <CheckBox x:Name="TgtNegative" Content="ネガティブプロンプト" IsCheckedChanged="FilterTarget_Changed" />
+                            <CheckBox x:Name="TgtCharacters" Content="キャラクター別プロンプト" IsCheckedChanged="FilterTarget_Changed" />
+                            <CheckBox x:Name="TgtCharacterNegative" Content="キャラクター別ネガティブ" IsCheckedChanged="FilterTarget_Changed" />
+                            <CheckBox x:Name="TgtModel" Content="モデル名" IsCheckedChanged="FilterTarget_Changed" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+            <TextBox x:Name="FilterBox" Grid.Column="1" Classes="clearButton"
+                     Watermark="語句をカンマ区切りで入力(例: blue hair, 1girl)"
+                     ToolTip.Tip="語句をカンマ( , )で区切ると、すべてを含む画像だけを表示します(AND)。&#10;例: blue hair, 1girl&#10;スペースと _ は同じ扱いです(hatsune miku = hatsune_miku)。&#10;検索する項目は左の「検索対象」ボタンで変更できます。"
+                     TextChanged="Filter_Changed" />
+        </Grid>
+
+        <Grid x:Name="BodyGrid" Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="330" MinWidth="220" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="*" MinWidth="240" />
+                <ColumnDefinition Width="6" />
+                <ColumnDefinition Width="390" MinWidth="240" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ───── 左: 並び替え・一覧 ───── -->
+            <Grid x:Name="LeftPanel" Grid.Column="0" RowDefinitions="Auto,*">
+                <Grid Grid.Row="0" Margin="10,2,10,8" ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock Text="並び替え" Classes="muted" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <ComboBox x:Name="SortBox" Grid.Column="1" HorizontalAlignment="Stretch" SelectedIndex="0"
+                              SelectionChanged="Sort_Changed">
+                        <ComboBoxItem Content="ファイル名" Tag="Name" />
+                        <ComboBoxItem Content="更新日時" Tag="Modified" />
+                        <ComboBoxItem Content="撮影日時" Tag="DateTaken" />
+                        <ComboBoxItem Content="サイズ" Tag="Size" />
+                        <ComboBoxItem Content="モデル" Tag="Model" />
+                        <ComboBoxItem Content="サンプラー" Tag="Sampler" />
+                        <ComboBoxItem Content="ステップ数" Tag="Steps" />
+                        <ComboBoxItem Content="CFG" Tag="Cfg" />
+                    </ComboBox>
+                    <ToggleButton x:Name="DescBox" Grid.Column="2" Content="▲ 昇順" MinWidth="76" Margin="6,0,0,0"
+                                  ToolTip.Tip="クリックで昇順(▲)と降順(▼)を切り替え"
+                                  IsCheckedChanged="Sort_Changed" />
+                </Grid>
+
+                <ListBox x:Name="FileList" Grid.Row="1" SelectionMode="Multiple"
+                         SelectionChanged="FileList_SelectionChanged"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         Background="Transparent">
+                    <ListBox.ContextMenu>
+                        <ContextMenu x:Name="FileMenu" Opening="FileMenu_Opening">
+                            <MenuItem x:Name="FmOpen" Header="既定のアプリで開く(_O)" Click="FileOp_OpenDefault" />
+                            <MenuItem x:Name="FmReveal" Header="ファイルマネージャーで表示(_E)" Click="FileOp_Reveal" />
+                            <Separator />
+                            <MenuItem x:Name="FmRename" Header="名前の変更(_M)" InputGesture="F2" Click="FileOp_Rename" />
+                            <MenuItem x:Name="FmDelete" Header="削除(_D)" InputGesture="Delete" Click="FileOp_Delete" />
+                            <Separator />
+                            <MenuItem x:Name="FmCopyPath" Header="ファイルのパスをコピー(_P)" Click="FileOp_CopyPath" />
+                            <MenuItem x:Name="FmCopyPrompt" Header="プロンプトをコピー(_R)" Click="FileOp_CopyPrompt" />
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+                </ListBox>
+            </Grid>
+
+            <GridSplitter x:Name="Split1" Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+
+            <!-- ───── 中央: 画像表示 ───── -->
+            <Panel x:Name="Viewport" Grid.Column="2" Background="#1B1B1B" ClipToBounds="True">
+                <!-- 拡大(Scale)と移動(Trans)の変換は、コードで付ける -->
+                <Image x:Name="Img" Stretch="Uniform" RenderTransformOrigin="0,0"
+                       RenderOptions.BitmapInterpolationMode="HighQuality" />
+
+                <!-- 画像がないときの案内 -->
+                <StackPanel x:Name="EmptyPanel" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock x:Name="Placeholder" Foreground="#9A9A9A" FontSize="16" TextAlignment="Center"
+                               Text="フォルダまたは画像をドラッグ&amp;ドロップ" />
+                    <Button Content="フォルダを開く" Click="OpenFolder_Click" HorizontalAlignment="Center"
+                            Margin="0,14,0,0" Padding="18,6" />
+                </StackPanel>
+
+                <!-- 表示倍率とフィット/100%(画像の右下に重ねる)。背景が暗いので、ボタンはいつもダークの見た目にする -->
+                <ThemeVariantScope RequestedThemeVariant="Dark" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                <Border Margin="14"
+                        CornerRadius="8" Background="#CC262626" Padding="6,4">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="ZoomText" Foreground="#DDDDDD" VerticalAlignment="Center"
+                                   MinWidth="48" TextAlignment="Right" Margin="6,0,10,0"
+                                   ToolTip.Tip="現在の表示倍率" />
+                        <Button x:Name="FitButton" Content="フィット" Classes="small" Click="Fit_Click" Margin="0,0,4,0"
+                                ToolTip.Tip="フィット表示(F)。画像を切り替えてもこの表示が続きます(選択中は太字)" />
+                        <Button x:Name="ActualButton" Content="100%" Classes="small" Click="Actual_Click"
+                                ToolTip.Tip="等倍表示(1)。画像を切り替えてもこの表示が続きます(選択中は太字)" />
+                        <Button x:Name="FullscreenButton" Content="全画面" Classes="small" Click="Fullscreen_Click"
+                                Margin="4,0,0,0" ToolTip.Tip="全画面表示(F11)。Esc で戻ります" />
+                    </StackPanel>
+                </Border>
+                </ThemeVariantScope>
+            </Panel>
+
+            <GridSplitter x:Name="Split2" Grid.Column="3" ResizeDirection="Columns" Background="Transparent" />
+
+            <!-- ───── 右: メタデータ(カード) ───── -->
+            <ScrollViewer x:Name="RightPanel" Grid.Column="4" VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="4,8,12,8">
+
+                    <!-- ファイル / 生成元 -->
+                    <Border Classes="card">
+                        <StackPanel>
+                            <TextBlock Text="ファイル" Classes="header" Margin="0,0,0,4" />
+                            <SelectableTextBlock x:Name="FileInfoText" TextWrapping="Wrap" />
+                            <TextBlock Text="生成元" Classes="header" Margin="0,10,0,4" />
+                            <SelectableTextBlock x:Name="SourceText" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- プロンプト -->
+                    <Border x:Name="PromptCard" Classes="card">
+                        <StackPanel>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="コピー" Classes="small" Click="CopyPrompt_Click" />
+                                <Button Classes="toggle" Tag="Prompt" Click="Section_Toggle" ToolTip.Tip="クリックで最小化 / 展開">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="PromptArrow" Text="▾" Classes="header" Width="16" />
+                                        <TextBlock Text="プロンプト(タグをクリックで絞り込みに追加)" Classes="header" />
+                                    </StackPanel>
+                                </Button>
+                            </DockPanel>
+                            <StackPanel x:Name="PromptBody" Margin="0,8,0,0">
+                                <WrapPanel x:Name="PromptChips" />
+                                <Expander Header="全文を表示" Margin="0,6,0,0" HorizontalAlignment="Stretch">
+                                    <ScrollViewer MaxHeight="240">
+                                        <SelectableTextBlock x:Name="PromptBox" TextWrapping="Wrap" />
+                                    </ScrollViewer>
+                                </Expander>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ネガティブプロンプト -->
+                    <Border x:Name="NegativeCard" Classes="card">
+                        <StackPanel>
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="コピー" Classes="small" Click="CopyNegative_Click" />
+                                <Button Classes="toggle" Tag="Negative" Click="Section_Toggle" ToolTip.Tip="クリックで最小化 / 展開">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="NegativeArrow" Text="▾" Classes="header" Width="16" />
+                                        <TextBlock Text="ネガティブプロンプト" Classes="header" />
+                                    </StackPanel>
+                                </Button>
+                            </DockPanel>
+                            <StackPanel x:Name="NegativeBody" Margin="0,8,0,0">
+                                <WrapPanel x:Name="NegativeChips" />
+                                <Expander Header="全文を表示" Margin="0,6,0,0" HorizontalAlignment="Stretch">
+                                    <ScrollViewer MaxHeight="200">
+                                        <SelectableTextBlock x:Name="NegativeBox" TextWrapping="Wrap" />
+                                    </ScrollViewer>
+                                </Expander>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- キャラクター別プロンプト(NovelAI V4 など。該当する画像のみ) -->
+                    <Border x:Name="CharactersCard" Classes="card" IsVisible="False">
+                        <StackPanel>
+                            <Button Classes="toggle" Tag="Characters" Click="Section_Toggle" ToolTip.Tip="クリックで最小化 / 展開">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="CharactersArrow" Text="▾" Classes="header" Width="16" />
+                                    <TextBlock Text="キャラクター別プロンプト" Classes="header" />
+                                </StackPanel>
+                            </Button>
+                            <StackPanel x:Name="CharactersPanel" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- パラメーター -->
+                    <Border x:Name="ParamsCard" Classes="card">
+                        <StackPanel>
+                            <Button Classes="toggle" Tag="Params" Click="Section_Toggle" ToolTip.Tip="クリックで最小化 / 展開">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="ParamsArrow" Text="▾" Classes="header" Width="16" />
+                                    <TextBlock Text="パラメーター" Classes="header" />
+                                </StackPanel>
+                            </Button>
+                            <StackPanel x:Name="ParamsBody" Margin="0,6,0,0">
+                                <ItemsControl x:Name="ParamsList" ItemTemplate="{StaticResource ParamRow}" />
+                                <Expander x:Name="OtherExpander" Header="その他のパラメーター" Margin="0,6,0,0"
+                                          HorizontalAlignment="Stretch" IsVisible="False">
+                                    <ItemsControl x:Name="OtherParamsList" ItemTemplate="{StaticResource ParamRow}" />
+                                </Expander>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 撮影情報(EXIF。カメラで撮った写真など、該当する画像のみ) -->
+                    <Border x:Name="ExifCard" Classes="card" IsVisible="False">
+                        <StackPanel>
+                            <Button Classes="toggle" Tag="Exif" Click="Section_Toggle" ToolTip.Tip="クリックで最小化 / 展開">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="ExifArrow" Text="▾" Classes="header" Width="16" />
+                                    <TextBlock Text="撮影情報(Exif)" Classes="header" />
+                                </StackPanel>
+                            </Button>
+                            <ItemsControl x:Name="ExifList" ItemTemplate="{StaticResource ParamRow}" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 生のメタデータ -->
+                    <Border Classes="card">
+                        <Expander Header="生のメタデータ" HorizontalAlignment="Stretch">
+                            <ScrollViewer MaxHeight="340">
+                                <SelectableTextBlock x:Name="RawBox" TextWrapping="Wrap"
+                                                     FontFamily="Consolas,Menlo,DejaVu Sans Mono,monospace" />
+                            </ScrollViewer>
+                        </Expander>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ───── ステータスバー ───── -->
+        <Border x:Name="StatusBar" Grid.Row="3" Padding="12,5"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+            <DockPanel>
+                <TextBlock x:Name="CountText" DockPanel.Dock="Right" Classes="muted" />
+                <TextBlock x:Name="Status" Text="準備完了" Classes="muted" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

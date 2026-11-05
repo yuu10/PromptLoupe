@@ -161,6 +161,7 @@ public partial class MainWindow : Window
         if (seq != folderSeq) return; // 別のフォルダが開かれた
 
         SetItems(files);
+        StartWatcher(folder, depth); // ほかのアプリでの移動・削除・名前変更を、一覧に反映する
 
         Title = $"PromptLoupe - {folder}" + depth switch
         {

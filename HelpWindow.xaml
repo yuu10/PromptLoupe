@@ -216,6 +216,10 @@
             <Paragraph Style="{StaticResource Note}">
                 外から PromptLoupe にファイルやフォルダをドロップしたときは、「1. 画像を開く」のとおり、それを開きます(コピーはしません)。
             </Paragraph>
+            <Paragraph Style="{StaticResource Note}">
+                開いているフォルダの画像が、ほかのアプリで移動・削除・名前変更されたときは、一覧にも反映します(切り取ってエクスプローラーに貼り付けたときなど)。
+                新しく増えた画像は、フォルダを開き直すと一覧に出ます。
+            </Paragraph>
 
             <!-- ───────────── 全画面 ───────────── -->
             <Paragraph Style="{StaticResource H2}">8. 全画面表示</Paragraph>

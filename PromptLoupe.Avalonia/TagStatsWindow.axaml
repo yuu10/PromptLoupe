@@ -1,0 +1,91 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:PromptLoupe"
+        x:Class="PromptLoupe.TagStatsWindow"
+        Title="PromptLoupe - タグの集計" Icon="avares://PromptLoupe/Assets/app.ico"
+        Width="600" Height="700" MinWidth="460" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
+    <Window.Styles>
+        <!-- 列の見出し(クリックで並び替え) -->
+        <Style Selector="Button.colHeader">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="4,4" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="TextBlock.muted">
+            <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Grid Margin="12" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+        <!-- 集計の条件 -->
+        <WrapPanel Grid.Row="0">
+            <ComboBox x:Name="SourceBox" Margin="0,0,8,8" MinWidth="180" SelectionChanged="Option_Changed"
+                      ToolTip.Tip="集計するプロンプト">
+                <ComboBoxItem Content="プロンプト" Tag="Prompt" />
+                <ComboBoxItem Content="ネガティブプロンプト" Tag="Negative" />
+                <ComboBoxItem Content="キャラクター別プロンプト" Tag="Characters" />
+            </ComboBox>
+            <ComboBox x:Name="ScopeBox" Margin="0,0,0,8" MinWidth="180" SelectionChanged="Option_Changed"
+                      ToolTip.Tip="集計する画像の範囲">
+                <ComboBoxItem Content="一覧に表示中の画像" Tag="Filtered" />
+                <ComboBoxItem Content="フォルダのすべての画像" Tag="All" />
+            </ComboBox>
+        </WrapPanel>
+
+        <TextBox x:Name="SearchBox" Grid.Row="1" Margin="0,0,0,8" Classes="clearButton"
+                 Watermark="タグを検索(一覧の中から探す)" TextChanged="Search_Changed" />
+
+        <TextBlock x:Name="SummaryText" Grid.Row="2" Margin="2,0,0,6" TextWrapping="Wrap" Classes="muted" />
+
+        <!-- 列の見出し。幅は下の行と同じ -->
+        <Grid Grid.Row="3" ColumnDefinitions="40,230,110,76,*" Margin="12,0,12,2">
+            <Button x:Name="MarkHeader" Grid.Column="0" Classes="colHeader" Tag="Mark" Click="Header_Click" />
+            <Button x:Name="TagHeader" Grid.Column="1" Classes="colHeader" Tag="Tag" Click="Header_Click" />
+            <Button x:Name="KindHeader" Grid.Column="2" Classes="colHeader" Tag="Kind" Click="Header_Click" />
+            <Button x:Name="CountHeader" Grid.Column="3" Classes="colHeader" Tag="Count" Click="Header_Click"
+                    HorizontalContentAlignment="Right" />
+            <Button x:Name="PercentHeader" Grid.Column="4" Classes="colHeader" Tag="Percent" Click="Header_Click"
+                    Margin="8,0,0,0" />
+        </Grid>
+
+        <ListBox x:Name="TagList" Grid.Row="4" SelectionMode="Multiple"
+                 DoubleTapped="TagList_DoubleTapped" KeyDown="TagList_KeyDown">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="local:TagStatRow">
+                    <Grid ColumnDefinitions="40,230,110,76,*">
+                        <TextBlock Grid.Column="0" Text="{Binding Mark}" ToolTip.Tip="絞り込み欄に入っているタグ" Margin="4,0" />
+                        <TextBlock Grid.Column="1" Text="{Binding Tag}" Foreground="{Binding Foreground}"
+                                   TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Tag}" Margin="4,0" />
+                        <TextBlock Grid.Column="2" Text="{Binding Kind}" TextTrimming="CharacterEllipsis" Classes="muted" Margin="4,0" />
+                        <TextBlock Grid.Column="3" Text="{Binding CountText}" TextAlignment="Right" Margin="4,0" />
+                        <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="12,0,0,0">
+                            <!-- 割合の棒(最大 50) -->
+                            <Border Width="50" Height="6" CornerRadius="3" VerticalAlignment="Center"
+                                    Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+                                <Border Width="{Binding BarWidth}" HorizontalAlignment="Left" CornerRadius="3"
+                                        Background="{DynamicResource SystemControlHighlightAccentBrush}" />
+                            </Border>
+                            <TextBlock Text="{Binding PercentText}" Margin="8,0,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="絞り込みに追加 / 外す(_F)" InputGesture="Enter" Click="ToggleFilter_Click" />
+                    <Separator />
+                    <MenuItem x:Name="CopyTagsMenu" Header="選んだタグをコピー(_C)" Click="CopyTags_Click" />
+                    <MenuItem Header="一覧をコピー(タグと枚数)(_L)" Click="CopyList_Click" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
+        </ListBox>
+
+        <TextBlock Grid.Row="5" Margin="2,8,0,0" TextWrapping="Wrap" FontSize="12" Classes="muted"
+                   Text="列の見出しをクリックすると、その列で並び替えます(もう一度で逆順)。ダブルクリック(または Enter)で、タグを絞り込みに追加 / 外す。範囲が「一覧に表示中の画像」のときは、絞り込むと、そのタグと一緒に使われているタグの集計に変わります。" />
+    </Grid>
+</Window>

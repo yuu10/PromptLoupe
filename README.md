@@ -1,12 +1,12 @@
 # PromptLoupe
 
-AI生成画像のメタデータを読み取り、それを元に並び替え・絞り込みしながら閲覧できる Windows 用画像ビューア(C# / WPF / .NET 8)。
+AI生成画像のメタデータを読み取り、それを元に並び替え・絞り込みしながら閲覧できる Windows 用画像ビューア(C# / WPF / .NET 10)。
 
 ![PromptLoupe のメイン画面。左にファイル一覧、中央に画像、右にプロンプトのタグやキャラクター別プロンプトのカード](docs/images/main.png)
 
 ## ビルドと実行
 
-.NET 8 SDK が必要です。
+.NET 10 SDK が必要です。
 
 ```
 dotnet run
@@ -25,6 +25,21 @@ dotnet test PromptLoupe.Tests
 ```
 
 main と `claude/` のブランチへのプッシュ、PR のたびに、GitHub Actions でビルドとテストが通るかを確かめています(`.github/workflows/build.yml`)。
+
+### Avalonia 版(開発中)
+
+Windows・Mac・Linux で動く版を `PromptLoupe.Avalonia/` で作っています。WPF 版と同じ機能になるまでは、WPF 版を正式な版とします。Avalonia 版はまだ配布していません。
+
+```
+dotnet run --project PromptLoupe.Avalonia
+```
+
+WPF 版との違い(今のところ):
+
+- HEIC・TIFF の画像は表示できません(メタデータと撮影情報は読めます)。WebP は Windows の拡張機能がなくても表示できます
+- 一覧からのドラッグ持ち出し、ファイルのコピー・切り取り・貼り付け、画像のコピー、プロパティ、使い方の画面は、まだありません
+- 設定は WPF 版と同じファイルを使います(Windows では `%AppData%\PromptLoupe`、Mac・Linux では `~/.config/PromptLoupe`)
+- Mac のショートカットは Ctrl の代わりに ⌘ です。削除は ⌘+Delete(Backspace)でもできます
 
 ## リリースの手順
 
@@ -70,6 +85,7 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
 - ファイル操作(左の一覧の右クリックメニュー / キー): コピー・切り取り・貼り付け(エクスプローラーと連携)、名前の変更、削除(ごみ箱へ)、エクスプローラーで開く、既定のアプリで開く、パス・画像・プロンプトのコピー、プロパティ。複数選択に対応
   - 削除は初期設定では無効。「設定 → ファイル操作 → 削除を許可する」でオンにする。「削除の前に確認する」も設定で切り替え(既定はオン)
   - 一覧の画像を、エクスプローラーや他のアプリへドラッグ&ドロップで持ち出せる(既定はコピー、Shift を押しながらで移動)。外からのドロップは、従来どおりそのファイル/フォルダを開く
+  - 開いているフォルダの画像が、ほかのアプリで移動・削除・名前変更されたら、一覧にも反映する(切り取ってエクスプローラーに貼り付けたときなど)。新しく増えた画像は、開き直すと出る
 - 全画面表示(F11 / メニュー「表示」/ 画像右下のボタン。Esc で戻る)
 - タグの色分け: Danbooru のタグ辞書(`danbooru.csv`、利用者が用意)で、一般 / アーティスト / 作品名 / キャラクター名 / メタ を色分け。`<lora:…>` などは辞書なしで色分け。メニュー「設定 → タグの色分け」で辞書を読み込む(`%AppData%\PromptLoupe\danbooru.csv` に保存。アプリには同梱しない)。辞書は現時点では [a1111-sd-webui-tagcomplete の danbooru.csv](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/blob/main/tags/danbooru.csv) を推奨(同じ場所の e621.csv などは分類の番号が違うため不可)
 - タグの集計(メニュー「表示 → タグの集計」/ Ctrl+T): タグごとに、使っている画像の枚数と割合を一覧にする
@@ -101,10 +117,19 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
 - `Metadata/ImageMetadata.cs` — 解釈済みメタデータのモデル
 - `Metadata/ExifInfo.cs` — EXIF の撮影情報と、表示用の整形
 - `PromptText.cs` — 検索用の正規化、プロンプトのタグへの分割
+- `NaturalComparer.cs` — 自然順(img2 が img10 より前)の比較(Avalonia 版で使う)
+- `FileChanges.cs` — ほかのアプリでの移動・削除・名前変更の通知を、一覧の変更に読み替える
 - `AppSettings.cs` — 設定の保存
 - `TagDictionary.cs` — タグ辞書の読み込み
 
 **PromptLoupe.Tests/** — 共通部分のテスト(`dotnet test PromptLoupe.Tests`)
+
+**PromptLoupe.Avalonia/**(Avalonia の画面。開発中)
+
+- WPF 版と同じ名前のファイル(`MainWindow.*`・`FileItem.cs`・`ThumbnailService.cs` など)は、同じ役割
+- `ImageLoader.cs` — 画像の読み込み(SkiaSharp)と、JPEG・WebP の EXIF 回転の補正
+- `PlatformShell.cs` — 既定のアプリで開く・ファイルマネージャーで表示・ごみ箱へ移す(OS ごとの処理)
+- `MessageDialog.cs` — メッセージのダイアログ
 
 **ルート**(WPF の画面。Windows 専用)
 
@@ -112,6 +137,7 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
 - `ThumbnailService.cs` — サムネイルの生成とメモリキャッシュ
 - `ExifOrientation.cs` — JPEG・WebP の EXIF 回転情報の読み取りと、向きの補正
 - `MainWindow.FileOps.cs` — ファイル操作とドラッグ&ドロップ(持ち出し)
+- `MainWindow.Watcher.cs` — 開いているフォルダの見張り(ほかのアプリでの移動・削除・名前変更を一覧に反映)
 - `MainWindow.Fullscreen.cs` — 全画面表示
 - `MainWindow.Tags.cs` — タグの色分け
 - `RenameWindow.xaml(.cs)` — 名前の変更ダイアログ
