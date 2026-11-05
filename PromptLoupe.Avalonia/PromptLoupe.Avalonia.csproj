@@ -30,6 +30,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- 使い方の本文(HelpWindow が読む) -->
+    <EmbeddedResource Include="Help.txt" LogicalName="PromptLoupe.Help.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!--
       配布物に同梱するライセンス文(ビルド・発行の出力先にコピーする)。
       ルートの THIRD-PARTY-NOTICES.txt は WPF 版用(ModernWpfUI)なので入れない。
