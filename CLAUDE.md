@@ -1,7 +1,7 @@
 # PromptLoupe(旧名 M Viewer。Claude Code 用メモ)
 
 AI生成画像のメタデータ(プロンプト・パラメーター)を元に、並び替え・絞り込みして閲覧する Windows 用画像ビューア。
-C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポートが 2026-11-10 に終わるため。更新後の WPF 版の動作は、ユーザーの確認待ち)、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` の `<Version>`(現在 1.6.0。1.6.0 で撮影情報(Exif)の表示・撮影日時の並び替え・WebP の EXIF 回転を追加)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
+C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポートが 2026-11-10 に終わるため。更新後の WPF 版の動作は、ユーザーが「問題なさそう」と確認(2026-11-05))、ModernWpfUI 0.9.6。バージョンは `PromptLoupe.csproj` の `<Version>`(現在 1.6.0。1.6.0 で撮影情報(Exif)の表示・撮影日時の並び替え・WebP の EXIF 回転を追加)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
 
 ## 進め方
 
@@ -38,6 +38,7 @@ C# / WPF / .NET 10(2026-11-04 に .NET 8 から更新。.NET 8 のサポート�
 | `MainWindow.xaml` / `.cs` | 画面、閲覧、絞り込み、メタデータ表示、ズーム |
 | `MainWindow.FileOps.cs` | 左パネルのファイル操作と、一覧からのドラッグ持ち出し |
 | `MainWindow.Fullscreen.cs` | 全画面表示(F11 / Esc) |
+| `MainWindow.Watcher.cs` / `FileChanges.cs`(Core) | 開いているフォルダの見張り(`FileSystemWatcher`)。ほかのアプリでの移動・削除・名前変更を一覧に反映する(2026-11-05。切り取ってエクスプローラーに貼り付けると、一覧に古い項目が残る不具合への対応)。通知は 300ms ためてから `FileChanges.Map` で読み替える。消えたはずのファイルが残っていれば何もしない(保存時に消して戻すアプリのため)。表示中でない画像が消えても、見ている画像は切り替えない。新しく増えた画像は加えない。Avalonia 版にも同じものがある(Linux で動作確認済み) |
 | `MainWindow.Tags.cs` / `TagDictionary.cs`(Core) | タグの色分けと、Danbooru 辞書(danbooru.csv)の読み込み |
 | `RenameWindow.xaml(.cs)` | 名前の変更ダイアログ |
 | `TagStatsWindow.xaml(.cs)` / `MainWindow.TagStats.cs` | タグの集計(使っている画像の枚数)。一覧や絞り込みが変わると `NotifyTagStats` で数え直す(300ms 間引き) |
