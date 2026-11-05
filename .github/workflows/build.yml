@@ -41,10 +41,16 @@ jobs:
   avalonia:
     # Avalonia 版(開発中)。Windows・Linux でビルドが通るかを確かめる(画面の動作までは確かめない)。
     # Mac(macos-latest)は、実行環境が割り当てられないまま 15 分で取り消され、CI 全体が失敗になるので外した(2026-11-04)
+    # 配布と同じ形(自己完結型・単一ファイル)で発行し、確認用に Actions の成果物(Artifacts)として置く。
+    # Releases には出さない(確認していない OS には配布しない方針)
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: ubuntu-latest
+            rid: linux-x64
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -56,3 +62,20 @@ jobs:
 
       - name: ビルド
         run: dotnet build PromptLoupe.Avalonia -c Release
+
+      - name: 発行(確認用)
+        run: >
+          dotnet publish PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj -c Release -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -o publish
+
+      - name: 成果物として置く
+        uses: actions/upload-artifact@v4
+        with:
+          name: PromptLoupe-Avalonia-${{ matrix.rid }}
+          path: publish/
+          retention-days: 14

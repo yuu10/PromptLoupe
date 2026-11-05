@@ -12,7 +12,7 @@
     <AssemblyName>PromptLoupe</AssemblyName>
     <RootNamespace>PromptLoupe</RootNamespace>
     <ApplicationIcon>../app.ico</ApplicationIcon>
-    <Version>1.6.0</Version>
+    <Version>1.7.0</Version>
     <Product>PromptLoupe</Product>
     <Authors>yuto</Authors>
     <Copyright>Copyright (c) 2026 yuto</Copyright>
@@ -37,10 +37,11 @@
   <ItemGroup>
     <!--
       配布物に同梱するライセンス文(ビルド・発行の出力先にコピーする)。
-      ルートの THIRD-PARTY-NOTICES.txt は WPF 版用(ModernWpfUI)なので入れない。
-      Avalonia 版を配布する前に、Avalonia・SkiaSharp などの表記をまとめた文書を作る(CLAUDE.md の「次にやること」)
+      ルートの THIRD-PARTY-NOTICES.txt は WPF 版用(ModernWpfUI)なので入れず、Avalonia 版用のものを使う。
+      パッケージのバージョンを変えたら、THIRD-PARTY-NOTICES.txt も直す
     -->
     <None Include="../LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

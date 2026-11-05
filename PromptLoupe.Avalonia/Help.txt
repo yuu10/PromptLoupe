@@ -126,5 +126,5 @@
 - **一覧からドラッグできない(Linux)** — この版では、Linux でのドラッグでの持ち出しにまだ対応していません。コピー(Ctrl+C)して、ファイルマネージャーに貼り付けてください。
 
 ## 13. ライセンス
-PromptLoupe は MIT License で配布しています(Copyright (c) 2026 yuto)。無料で使え、改変や再配布もできます。再配布するときは、著作権表示とライセンス文を残してください。画面の部品には Avalonia、画像の読み込みには SkiaSharp(どちらも MIT License)を使っています。
-! PromptLoupe のライセンス文は、アプリと同じフォルダの `LICENSE` にあります。開発中のこの版には、Avalonia などのライセンス表記をまだ同梱していません(配布の前にまとめます)。本ソフトウェアは無保証です。
+PromptLoupe は MIT License で配布しています(Copyright (c) 2026 yuto)。無料で使え、改変や再配布もできます。再配布するときは、著作権表示とライセンス文を残してください。画面の部品には Avalonia、画像の読み込みには SkiaSharp(どちらも MIT License)などを使っています。
+! ライセンス文は、アプリと同じフォルダの `LICENSE` と `THIRD-PARTY-NOTICES.txt` にあります。本ソフトウェアは無保証です。

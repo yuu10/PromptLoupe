@@ -929,7 +929,7 @@ public partial class MainWindow : Window
             $"PromptLoupe(Avalonia 版・開発中)\nバージョン {version}\n{copyright}(MIT License)\n\n" +
             "AI生成画像のメタデータを元に、並び替え・絞り込みして閲覧できる画像ビューア\n\n" +
             $"使用ライブラリ: Avalonia {avalonia}、SkiaSharp(どちらも MIT License)など\n" +
-            "PromptLoupe のライセンス文は、同梱の LICENSE にあります。\n\n" +
+            "ライセンス文は、同梱の LICENSE と THIRD-PARTY-NOTICES.txt にあります。\n\n" +
             $"{RuntimeInformation.FrameworkDescription}  ・  {RuntimeInformation.OSDescription}",
             "バージョン情報");
     }

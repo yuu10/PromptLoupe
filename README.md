@@ -34,6 +34,8 @@ Windows・Mac・Linux で動く版を `PromptLoupe.Avalonia/` で作っていま
 dotnet run --project PromptLoupe.Avalonia
 ```
 
+確認用に、配布と同じ形(自己完結型・単一ファイル)のものを、GitHub Actions の「ビルド」の実行結果の Artifacts に置いています(`PromptLoupe-Avalonia-win-x64` / `-linux-x64`、14 日で消えます)。Linux 版は zip から出すと実行の権限が外れるので、`chmod +x PromptLoupe` してから起動してください。
+
 WPF 版との違い(今のところ):
 
 - HEIC・TIFF の画像は表示できません(メタデータと撮影情報は読めます)。WebP は Windows の拡張機能がなくても表示できます
@@ -160,6 +162,8 @@ PromptLoupe は [MIT License](LICENSE) で配布しています(Copyright (c) 20
 
 ModernWpfUI のライセンス文は [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) にあります。
 `LICENSE` と `THIRD-PARTY-NOTICES.txt` は、ビルド・発行のたびに出力先へコピーされます。配布するときは、この2つを exe と一緒に入れてください。
+
+Avalonia 版は、Avalonia(MIT)・SkiaSharp・HarfBuzzSharp(MIT)・MicroCom.Runtime(MIT)・Tmds.DBus.Protocol(MIT)・ANGLE(BSD 3-Clause)と、SkiaSharp に含まれる Skia などのライブラリを使っています。ライセンス文は [PromptLoupe.Avalonia/THIRD-PARTY-NOTICES.txt](PromptLoupe.Avalonia/THIRD-PARTY-NOTICES.txt) にあり、Avalonia 版のビルド・発行の出力先にコピーされます(WPF 版のものとは別のファイルです)。
 
 ## 既知の制限
 
