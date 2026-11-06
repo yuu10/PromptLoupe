@@ -11,7 +11,7 @@ namespace PromptLoupe;
 /// <summary>
 /// 画像の読み込み。WPF 版の WIC の代わり。
 /// - PNG・JPEG・WebP・BMP・GIF(先頭フレーム)は SkiaSharp で読む
-/// - HEIC・HEIF・TIFF(先頭ページ)は Magick.NET で読む。Magick.NET の部品がない OS(Intel の Mac)では読めない(<see cref="UnsupportedHint"/>)
+/// - HEIC・HEIF・TIFF(先頭ページ)は Magick.NET で読む。Magick.NET の部品がない・読み込めない環境(Intel の Mac、macOS 14 以前)では読めない(<see cref="UnsupportedHint"/>)
 /// - JPEG・WebP は EXIF の回転情報(Orientation)に従って向きを直す。値は WPF 版と同じく MetadataReader.ReadExif で読む。
 ///   TIFF は Magick.NET の AutoOrient で直す。HEIC は libheif が irot・imir を当てて読むので、こちらでは回さない(二重に回る)
 /// </summary>
@@ -37,7 +37,7 @@ public static class ImageLoader
     static bool UsesMagick(string path) =>
         Path.GetExtension(path).ToLowerInvariant() is ".heic" or ".heif" or ".tif" or ".tiff";
 
-    /// <summary>Magick.NET の部品(Magick.Native)を読み込めるか。Intel の Mac など、部品がない OS では false。</summary>
+    /// <summary>Magick.NET の部品(Magick.Native)を読み込めるか。Intel の Mac(部品がない)や macOS 14 以前(Apple シリコン用は macOS 15 以降)では false。</summary>
     static readonly Lazy<bool> MagickAvailable = new(() =>
     {
         try

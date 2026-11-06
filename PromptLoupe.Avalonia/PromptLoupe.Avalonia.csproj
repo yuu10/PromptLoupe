@@ -68,7 +68,7 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
     <!--
       HEIC・HEIF・TIFF の読み込み。Apache-2.0(中の libheif・libde265 は LGPL-3.0)。
-      Intel の Mac 向けの部品は 15 系で外れたので、Intel の Mac では HEIC・TIFF を表示できない
+      Intel の Mac 向けの部品は 15 系で外れ、Apple シリコン向けは macOS 15 以降。それ以外の Mac では HEIC・TIFF を表示できない
     -->
     <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="$(MagickNetVersion)" />
   </ItemGroup>

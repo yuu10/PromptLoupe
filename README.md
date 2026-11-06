@@ -36,9 +36,11 @@ dotnet run --project PromptLoupe.Avalonia
 
 確認用に、配布と同じ形(自己完結型・単一ファイル)のものを、GitHub Actions の「ビルド」の実行結果の Artifacts に置いています(`PromptLoupe-Avalonia-win-x64` / `-linux-x64`、14 日で消えます)。Linux 版は zip から出すと実行の権限が外れるので、`chmod +x PromptLoupe` してから起動してください。
 
+Mac 版は、**動作を確かめていない試験版**として Releases に載せています(Apple シリコン用の `osx-arm64` と、Intel 用の `osx-x64`。macOS 12 以降)。Mac の実行環境が CI で割り当てられないことがあるため、Linux の上で Mac 向けに作り、`tools/make_macos_app.sh` で `PromptLoupe.app` にまとめて、rcodesign でアドホック署名を付けています(Apple の証明書・公証はありません)。そのため、ダウンロードしたものはそのままでは開けません。`xattr -cr PromptLoupe.app` を実行してから開いてください。
+
 WPF 版との違い(今のところ):
 
-- WebP・HEIC は、Windows の拡張機能がなくても表示できます(HEIC・TIFF は Magick.NET で読みます)。ただし Intel の Mac では HEIC・TIFF を表示できません(Magick.NET 15 が Intel の Mac に対応していないため)
+- WebP・HEIC は、Windows の拡張機能がなくても表示できます(HEIC・TIFF は Magick.NET で読みます)。ただし Intel の Mac と macOS 14 以前の Mac では HEIC・TIFF を表示できません(Magick.NET 15 の部品が、Intel の Mac に対応せず、Apple シリコン用は macOS 15 以降のため)
 - Linux では、一覧からのドラッグでの持ち出しができません(Avalonia 11.3 が、Linux でほかのアプリへのドラッグに対応していないため)。コピー(Ctrl+C)してファイルマネージャーに貼り付けてください
 - ファイルの切り取り(Ctrl+X)は、Windows はエクスプローラー、Linux は GNOME・KDE のファイルマネージャーに「移動」として伝わります。Mac の Finder には伝わらず、Finder に貼り付けるとコピーになります
 - プロパティは Windows のみです

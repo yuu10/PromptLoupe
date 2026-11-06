@@ -71,8 +71,68 @@ jobs:
           - WebP の表示: Windows の「WebP 画像拡張機能」
           - HEIC の表示: 「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」
 
+          ## Mac 版(試験版・動作未確認)
+
+          Mac で動くかどうかを、まだ確かめていない試験版です。動いた・動かなかったなど、Issues で教えていただけると助かります。
+
+          - Apple シリコン(M1 以降)の Mac: `PromptLoupe-Avalonia-*-osx-arm64.zip`
+          - Intel の Mac: `PromptLoupe-Avalonia-*-osx-x64.zip`(HEIC・TIFF は表示できません)
+          - macOS 12 以降。Apple シリコンでも、macOS 14 以前では HEIC・TIFF を表示できません
+
+          zip を展開して、`PromptLoupe.app` をアプリケーションフォルダなどに移してください。Apple の公証を受けていないため、そのままでは「開けません」と表示されます。ターミナルで次を実行してから開いてください。
+
+          ```
+          xattr -cr /Applications/PromptLoupe.app
+          ```
+
           ## 変更点
 
           (ここに書く)
           '@
           gh release create "${{ github.ref_name }}" $env:ZIP --draft --title "PromptLoupe ${{ steps.version.outputs.version }}" --notes $notes
+
+  macos:
+    # Mac 版(試験版・動作未確認)。Linux の上で Mac 向けに作り、上のジョブが作った下書きに加える。
+    # Mac の実行環境は割り当てられないことがあるので使わない。署名はアドホック(Apple の証明書・公証はなし)
+    needs: release
+    strategy:
+      matrix:
+        rid: [osx-arm64, osx-x64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: rcodesign を入れる
+        run: bash tools/install_rcodesign.sh
+
+      - name: 発行
+        run: >
+          dotnet publish PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj -c Release -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -o publish
+
+      # Avalonia 版の <Version> も、タグと合っていなければ止める
+      - name: .app にまとめて、下書きに加える
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ github.ref_name }}"
+          version=$(grep -oP '(?<=<Version>)[^<]+' PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj)
+          if [ "${tag#v}" != "$version" ]; then
+            echo "タグ ($tag) と PromptLoupe.Avalonia.csproj の Version ($version) が一致しません" >&2
+            exit 1
+          fi
+          mkdir -p out
+          bash tools/make_macos_app.sh publish out "$version"
+          rcodesign verify out/PromptLoupe.app
+          zip_name="PromptLoupe-Avalonia-$version-${{ matrix.rid }}.zip"
+          (cd out && zip -qry "../$zip_name" PromptLoupe.app)
+          gh release upload "$tag" "$zip_name"

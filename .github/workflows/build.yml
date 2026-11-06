@@ -79,3 +79,46 @@ jobs:
           name: PromptLoupe-Avalonia-${{ matrix.rid }}
           path: publish/
           retention-days: 14
+
+  macos:
+    # Mac 版(動作未確認)。Mac の実行環境は割り当てられないことがあるので、Linux の上で Mac 向けに作る。
+    # .NET SDK は Linux でも本体にアドホック署名を付ける。.app 全体の署名は rcodesign で付ける
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [osx-arm64, osx-x64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: rcodesign を入れる
+        run: bash tools/install_rcodesign.sh
+
+      - name: 発行
+        run: >
+          dotnet publish PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj -c Release -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -o publish
+
+      - name: .app にまとめて署名する
+        run: |
+          version=$(grep -oP '(?<=<Version>)[^<]+' PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj)
+          mkdir -p out
+          bash tools/make_macos_app.sh publish out "$version"
+          rcodesign verify out/PromptLoupe.app
+          cd out && zip -qry "../PromptLoupe-Avalonia-${{ matrix.rid }}.zip" PromptLoupe.app
+
+      - name: 成果物として置く
+        uses: actions/upload-artifact@v4
+        with:
+          name: PromptLoupe-Avalonia-${{ matrix.rid }}
+          path: PromptLoupe-Avalonia-${{ matrix.rid }}.zip
+          retention-days: 14
