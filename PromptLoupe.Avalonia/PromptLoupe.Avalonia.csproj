@@ -19,6 +19,8 @@
     <!-- XAML のバインディングを、コンパイル時に型で確かめる -->
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+    <!-- Magick.NET の版(パッケージの参照と、ライセンス文の場所の両方で使う) -->
+    <MagickNetVersion>15.1.0</MagickNetVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -42,13 +44,33 @@
     -->
     <None Include="../LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
     <None Include="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Magick.NET と、その中の ImageMagick・libheif などのライセンス文(約 430KB)。パッケージに入っているものをそのまま写す -->
+    <None Include="$(NuGetPackageRoot)magick.net-q8-anycpu/$(MagickNetVersion)/Notice.txt" Link="THIRD-PARTY-NOTICES-Magick.NET.txt"
+          CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
+
+  <!--
+    Magick.NET の部品(Magick.Native-*。libheif・libde265(LGPL)を含む)は、単一ファイルの exe に埋め込まず、横に別ファイルで置く。
+    LGPL の部分を、利用者が差し替えられるようにするため
+  -->
+  <Target Name="KeepMagickNativeOutsideBundle" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Update="@(ResolvedFileToPublish)"
+                             Condition="$([System.String]::Copy('%(Filename)').StartsWith('Magick.Native'))"
+                             ExcludeFromSingleFile="true" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <!-- 画面の部品。MIT ライセンス。画像の読み込みには、Avalonia に含まれる SkiaSharp を使う -->
     <PackageReference Include="Avalonia" Version="11.3.22" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <!--
+      HEIC・HEIF・TIFF の読み込み。Apache-2.0(中の libheif・libde265 は LGPL-3.0)。
+      Intel の Mac 向けの部品は 15 系で外れたので、Intel の Mac では HEIC・TIFF を表示できない
+    -->
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="$(MagickNetVersion)" />
   </ItemGroup>
 
 </Project>

@@ -13,6 +13,12 @@ PromptLoupe (Avalonia edition) uses the following third-party software.
   - SkiaSharp・HarfBuzzSharp に含まれる Skia・HarfBuzz などのライブラリ
                                     末尾の「SkiaSharp / HarfBuzzSharp THIRD-PARTY NOTICES」を参照
   - .NET Runtime                    MIT License(https://github.com/dotnet/runtime)
+  - Magick.NET 15.1.0               Apache License 2.0
+    (中に含まれる ImageMagick・libheif・libde265・libtiff などのライセンス文は、
+     同じフォルダの THIRD-PARTY-NOTICES-Magick.NET.txt にあります。
+     libheif・libde265 は LGPL-3.0 で、Magick.Native-* のファイルに含まれます。
+     Magick.Native-* は exe とは別のファイルなので、差し替えられます。
+     ソースコード: https://github.com/dlemstra/Magick.NET ・ https://github.com/ImageMagick)
 
 それぞれのライセンス文を、以下に掲載します。
 

@@ -928,8 +928,8 @@ public partial class MainWindow : Window
         await MessageDialog.Show(this,
             $"PromptLoupe(Avalonia 版・開発中)\nバージョン {version}\n{copyright}(MIT License)\n\n" +
             "AI生成画像のメタデータを元に、並び替え・絞り込みして閲覧できる画像ビューア\n\n" +
-            $"使用ライブラリ: Avalonia {avalonia}、SkiaSharp(どちらも MIT License)など\n" +
-            "ライセンス文は、同梱の LICENSE と THIRD-PARTY-NOTICES.txt にあります。\n\n" +
+            $"使用ライブラリ: Avalonia {avalonia}、SkiaSharp(どちらも MIT License)、Magick.NET(Apache License 2.0)など\n" +
+            "ライセンス文は、同梱の LICENSE・THIRD-PARTY-NOTICES.txt・THIRD-PARTY-NOTICES-Magick.NET.txt にあります。\n\n" +
             $"{RuntimeInformation.FrameworkDescription}  ・  {RuntimeInformation.OSDescription}",
             "バージョン情報");
     }

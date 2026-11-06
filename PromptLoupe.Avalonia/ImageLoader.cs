@@ -2,32 +2,86 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using ImageMagick;
 using PromptLoupe.Metadata;
 using SkiaSharp;
 
 namespace PromptLoupe;
 
 /// <summary>
-/// 画像の読み込み(SkiaSharp)。WPF 版の WIC の代わり。
-/// - 対応: PNG・JPEG・WebP・BMP・GIF(先頭フレーム)。TIFF・HEIC は読めない(<see cref="UnsupportedHint"/>)
-/// - JPEG・WebP は EXIF の回転情報(Orientation)に従って向きを直す。値は WPF 版と同じく MetadataReader.ReadExif で読む
+/// 画像の読み込み。WPF 版の WIC の代わり。
+/// - PNG・JPEG・WebP・BMP・GIF(先頭フレーム)は SkiaSharp で読む
+/// - HEIC・HEIF・TIFF(先頭ページ)は Magick.NET で読む。Magick.NET の部品がない OS(Intel の Mac)では読めない(<see cref="UnsupportedHint"/>)
+/// - JPEG・WebP は EXIF の回転情報(Orientation)に従って向きを直す。値は WPF 版と同じく MetadataReader.ReadExif で読む。
+///   TIFF は Magick.NET の AutoOrient で直す。HEIC は libheif が irot・imir を当てて読むので、こちらでは回さない(二重に回る)
 /// </summary>
 public static class ImageLoader
 {
     /// <summary>画像を読み込む。maxSide を指定すると、長辺がその大きさになるように縮小する(サムネイル用)。</summary>
     public static Bitmap Load(string path, int? maxSide = null)
     {
+        if (UsesMagick(path)) return LoadWithMagick(path, maxSide);
         using var bmp = Decode(path, maxSide);
         return ToAvalonia(bmp);
     }
 
     /// <summary>表示できない形式なら、その案内を返す(表示できる形式なら空)。</summary>
-    public static string UnsupportedHint(string path) => Path.GetExtension(path).ToLowerInvariant() switch
+    public static string UnsupportedHint(string path)
     {
-        ".heic" or ".heif" => "(HEIC はこの版ではまだ表示できません。メタデータは読めます)",
-        ".tif" or ".tiff" => "(TIFF はこの版ではまだ表示できません)",
-        _ => "",
-    };
+        if (!UsesMagick(path) || MagickAvailable.Value) return "";
+        return Path.GetExtension(path).ToLowerInvariant() is ".heic" or ".heif"
+            ? "(この環境では HEIC を表示できません。メタデータは読めます)"
+            : "(この環境では TIFF を表示できません)";
+    }
+
+    static bool UsesMagick(string path) =>
+        Path.GetExtension(path).ToLowerInvariant() is ".heic" or ".heif" or ".tif" or ".tiff";
+
+    /// <summary>Magick.NET の部品(Magick.Native)を読み込めるか。Intel の Mac など、部品がない OS では false。</summary>
+    static readonly Lazy<bool> MagickAvailable = new(() =>
+    {
+        try
+        {
+            _ = MagickNET.Version;
+            return true;
+        }
+        catch (Exception ex) when (ex is TypeInitializationException or DllNotFoundException or BadImageFormatException or EntryPointNotFoundException)
+        {
+            return false;
+        }
+    });
+
+    static Bitmap LoadWithMagick(string path, int? maxSide)
+    {
+        if (!MagickAvailable.Value) throw new NotSupportedException("この形式の画像は読めません");
+
+        // 複数ページの TIFF は、先頭のページだけ読む
+        var settings = new MagickReadSettings { FrameIndex = 0, FrameCount = 1 };
+        using var image = new MagickImage(path, settings);
+
+        bool heif = Path.GetExtension(path).ToLowerInvariant() is ".heic" or ".heif";
+        if (!heif) image.AutoOrient();
+
+        if (maxSide is int max && Math.Max(image.Width, image.Height) > max)
+            image.Thumbnail(new MagickGeometry((uint)max, (uint)max)); // 縦横比は保つ
+
+        image.ColorSpace = ColorSpace.sRGB;
+        image.Depth = 8; // 16 ビットの画像は、そのままだと 1 色 2 バイトで書き出される
+        byte[] pixels = image.ToByteArray(MagickFormat.Bgra); // 1 画素 4 バイト、アルファは乗算していない
+        int w = (int)image.Width, h = (int)image.Height;
+        if (pixels.Length != w * h * 4) throw new InvalidDataException("画像を読めませんでした(画素の形式が違います)");
+        var handle = GCHandle.Alloc(pixels, GCHandleType.Pinned);
+        try
+        {
+            // Bitmap は画素を自分の領域に写すので、固定は作る間だけでよい
+            return new Bitmap(PixelFormat.Bgra8888, AlphaFormat.Unpremul, handle.AddrOfPinnedObject(),
+                new PixelSize(w, h), new Vector(96, 96), w * 4);
+        }
+        finally
+        {
+            handle.Free();
+        }
+    }
 
     static SKBitmap Decode(string path, int? maxSide)
     {
