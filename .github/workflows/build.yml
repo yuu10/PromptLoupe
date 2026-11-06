@@ -113,7 +113,9 @@ jobs:
           version=$(grep -oP '(?<=<Version>)[^<]+' PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj)
           mkdir -p out
           bash tools/make_macos_app.sh publish out "$version"
-          rcodesign verify out/PromptLoupe.app
+          # verify は Mach-O にしか使えないので、本体を確かめ、.app の署名(CodeResources)があるかを見る
+          rcodesign verify out/PromptLoupe.app/Contents/MacOS/PromptLoupe
+          test -f out/PromptLoupe.app/Contents/_CodeSignature/CodeResources
           cd out && zip -qry "../PromptLoupe-Avalonia-${{ matrix.rid }}.zip" PromptLoupe.app
 
       - name: 成果物として置く
