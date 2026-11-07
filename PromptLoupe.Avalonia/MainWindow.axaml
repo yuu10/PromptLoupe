@@ -402,8 +402,6 @@
                 Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
             <DockPanel>
                 <TextBlock x:Name="CountText" DockPanel.Dock="Right" Classes="muted" />
-                <!-- 【調査用・一時的】画像の切り替えにかかった時間(MainWindow.axaml.cs の MeasureRender) -->
-                <TextBlock x:Name="DebugText" DockPanel.Dock="Right" Classes="muted" Margin="0,0,16,0" />
                 <TextBlock x:Name="Status" Text="準備完了" Classes="muted" TextTrimming="CharacterEllipsis" />
             </DockPanel>
         </Border>

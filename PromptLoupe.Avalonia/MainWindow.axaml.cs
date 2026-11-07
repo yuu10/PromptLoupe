@@ -435,15 +435,10 @@ public partial class MainWindow : Window
         }
         try
         {
-            var loadTask = preloader.Get(path);
-            bool prefetched = loadTask.IsCompleted;
-            var waitWatch = System.Diagnostics.Stopwatch.StartNew();
-            var bmp = await loadTask;
-            double waitMs = waitWatch.Elapsed.TotalMilliseconds;
+            var bmp = await preloader.Get(path);
             if (seq != loadSeq) return; // 読んだ画像は先読みとして残る(要らなければ、次の Keep で捨てる)
             SetImage(bmp);
             EmptyPanel.IsVisible = false;
-            MeasureRender(seq, path, prefetched, waitMs);
             ApplyViewMode();
             Status.Text = $"{index + 1}/{shown.Count}   {bmp.PixelSize.Width}×{bmp.PixelSize.Height}   {item.Size / 1024.0:N0} KB";
         }
@@ -762,51 +757,7 @@ public partial class MainWindow : Window
     /// <summary>大きく拡大したときは、ぼかさずに画素をそのまま見せる。</summary>
     void UpdateScalingMode() =>
         RenderOptions.SetBitmapInterpolationMode(Img,
-            Scale.ScaleX >= 3 ? BitmapInterpolationMode.None : debugInterpolation);
-
-    // ───────── 【調査用・一時的】画像の切り替えの重さの切り分け(2026-11-07) ─────────
-    // 原因が分かったら、この区切りの中と、呼んでいるところ(MeasureRender・F9)を消す
-
-    BitmapInterpolationMode debugInterpolation = BitmapInterpolationMode.HighQuality;
-
-    static string InterpolationName(BitmapInterpolationMode m) => m switch
-    {
-        BitmapInterpolationMode.HighQuality => "高",
-        BitmapInterpolationMode.MediumQuality => "中",
-        _ => "低",
-    };
-
-    /// <summary>F9: 縮小表示の品質を 高 → 中 → 低 → 高 と切り替える。</summary>
-    void CycleDebugInterpolation()
-    {
-        debugInterpolation = debugInterpolation switch
-        {
-            BitmapInterpolationMode.HighQuality => BitmapInterpolationMode.MediumQuality,
-            BitmapInterpolationMode.MediumQuality => BitmapInterpolationMode.LowQuality,
-            _ => BitmapInterpolationMode.HighQuality,
-        };
-        UpdateScalingMode();
-        DebugText.Text = $"[調査用] 縮小表示の品質: {InterpolationName(debugInterpolation)}(F9 で切り替え)";
-    }
-
-    /// <summary>
-    /// 画像を替えてから、画面に描き終わるまでの時間を測って、ステータスバーに出す。
-    /// 描画の合図(RequestAnimationFrame)を 2 回待つ。2 回目が来たときには、新しい画像を描いた 1 コマ目が終わっている
-    /// </summary>
-    void MeasureRender(int seq, string path, bool prefetched, double waitMs)
-    {
-        var top = TopLevel.GetTopLevel(this);
-        if (top == null) return;
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        top.RequestAnimationFrame(_ => top.RequestAnimationFrame(_ =>
-        {
-            if (seq != loadSeq) return;
-            double renderMs = sw.Elapsed.TotalMilliseconds;
-            string decode = preloader.DecodeMilliseconds(path) is double d ? $"{d:N0}ms" : "?";
-            DebugText.Text =
-                $"[調査用] 展開 {decode}・待ち {waitMs:N0}ms({(prefetched ? "先読み済み" : "先読みなし")})・描画 {renderMs:N0}ms・品質 {InterpolationName(debugInterpolation)}(F9)";
-        }));
-    }
+            Scale.ScaleX >= 3 ? BitmapInterpolationMode.None : BitmapInterpolationMode.HighQuality);
 
     void Viewport_PointerWheelChanged(object? sender, PointerWheelEventArgs e)
     {
@@ -1062,12 +1013,6 @@ public partial class MainWindow : Window
         if (e.Key == Key.F1)
         {
             ShowHelp();
-            e.Handled = true;
-            return;
-        }
-        if (e.Key == Key.F9) // 【調査用・一時的】
-        {
-            CycleDebugInterpolation();
             e.Handled = true;
             return;
         }
