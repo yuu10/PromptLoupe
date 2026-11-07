@@ -31,6 +31,7 @@ public partial class MainWindow : Window
     CancellationTokenSource? scanCts;
     string? currentFolder;
     int loadSeq;
+    readonly ImagePreloader preloader = new(); // 表示用の画像と、その前後の先読み
     int folderSeq;
     bool initializing = true;
 
@@ -415,21 +416,19 @@ public partial class MainWindow : Window
         }
         ShowMeta(item, meta);
 
-        // 画像
+        // 画像(前後の画像は先読みしておき、送ったときに待たずに出す)
+        int index = shown.IndexOf(item);
+        var keep = new List<string> { path };
+        if (index > 0) keep.Add(shown[index - 1].Path);
+        if (index >= 0 && index + 1 < shown.Count) keep.Add(shown[index + 1].Path);
         try
         {
-            var bmp = await Task.Run(() => ImageLoader.Load(path));
-            if (seq != loadSeq)
-            {
-                bmp.Dispose();
-                return;
-            }
-            var old = Img.Source as Bitmap;
-            Img.Source = bmp;
-            old?.Dispose(); // 表示用の画像は大きいので、すぐに手放す(サムネイルとは別物)
+            var bmp = await preloader.Get(path);
+            if (seq != loadSeq) return; // 読んだ画像は先読みとして残る(要らなければ、次の Keep で捨てる)
+            SetImage(bmp);
             EmptyPanel.IsVisible = false;
             ApplyViewMode();
-            Status.Text = $"{shown.IndexOf(item) + 1}/{shown.Count}   {bmp.PixelSize.Width}×{bmp.PixelSize.Height}   {item.Size / 1024.0:N0} KB";
+            Status.Text = $"{index + 1}/{shown.Count}   {bmp.PixelSize.Width}×{bmp.PixelSize.Height}   {item.Size / 1024.0:N0} KB";
         }
         catch (Exception ex)
         {
@@ -439,13 +438,16 @@ public partial class MainWindow : Window
             Placeholder.Text = "画像を表示できません";
             Status.Text = $"読み込み失敗: {ex.Message}{ImageLoader.UnsupportedHint(path)}";
         }
+
+        // 表示を切り替えてから、前後以外の画像を手放し、前後を先読みする
+        preloader.Keep(keep);
+        foreach (var p in keep.Skip(1)) preloader.Prefetch(p);
     }
 
+    /// <summary>表示する画像を替える。画像の持ち主は preloader なので、ここでは手放さない。</summary>
     void SetImage(Bitmap? bmp)
     {
-        var old = Img.Source as Bitmap;
         Img.Source = bmp;
-        if (!ReferenceEquals(old, bmp)) old?.Dispose();
         UpdateZoomText();
     }
 
@@ -453,6 +455,7 @@ public partial class MainWindow : Window
     {
         currentItem = null;
         SetImage(null);
+        preloader.Clear();
         Placeholder.Text = "画像が見つかりません";
         EmptyPanel.IsVisible = true;
         ShowMeta(null, null);
