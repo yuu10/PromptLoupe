@@ -32,6 +32,8 @@ public partial class MainWindow : Window
     string? currentFolder;
     int loadSeq;
     readonly ImagePreloader preloader = new(); // 表示用の画像と、その前後の先読み
+    int lastShownIndex = -1; // 前に表示した画像の、一覧での位置(送る向きを知るため)
+    int direction = 1;       // 送っている向き(↓ なら 1、↑ なら -1)。1 つずつ動いたときだけ更新する
     int folderSeq;
     bool initializing = true;
 
@@ -416,11 +418,21 @@ public partial class MainWindow : Window
         }
         ShowMeta(item, meta);
 
-        // 画像(前後の画像は先読みしておき、送ったときに待たずに出す)
+        // 画像(前後の画像は先読みしておき、送ったときに待たずに出す)。
+        // 送っている向きには 2 枚、逆向きには 1 枚(↓ で送っていれば 次・次の次・前)。近い順に先読みする
         int index = shown.IndexOf(item);
+        int step = index - lastShownIndex;
+        if (step is 1 or -1) direction = step;
+        lastShownIndex = index;
         var keep = new List<string> { path };
-        if (index > 0) keep.Add(shown[index - 1].Path);
-        if (index >= 0 && index + 1 < shown.Count) keep.Add(shown[index + 1].Path);
+        if (index >= 0)
+        {
+            foreach (int offset in new[] { direction, -direction, 2 * direction })
+            {
+                int i = index + offset;
+                if (i >= 0 && i < shown.Count) keep.Add(shown[i].Path);
+            }
+        }
         try
         {
             var loadTask = preloader.Get(path);

@@ -10,7 +10,7 @@ namespace PromptLoupe;
 
 /// <summary>
 /// 画像の読み込み。WPF 版の WIC の代わり。
-/// - PNG・JPEG・WebP・BMP・GIF(先頭フレーム)は SkiaSharp で読む
+/// - PNG・JPEG・WebP・BMP・GIF(先頭フレーム)は SkiaSharp で読む。表示用で回転が要らないものは、Avalonia の Bitmap(Stream) に直接読ませる
 /// - HEIC・HEIF・TIFF(先頭ページ)は Magick.NET で読む。Magick.NET の部品がない・読み込めない環境(Intel の Mac、macOS 14 以前)では読めない(<see cref="UnsupportedHint"/>)
 /// - JPEG・WebP は EXIF の回転情報(Orientation)に従って向きを直す。値は WPF 版と同じく MetadataReader.ReadExif で読む。
 ///   TIFF は Magick.NET の AutoOrient で直す。HEIC は libheif が irot・imir を当てて読むので、こちらでは回さない(二重に回る)
@@ -21,6 +21,22 @@ public static class ImageLoader
     public static Bitmap Load(string path, int? maxSide = null)
     {
         if (UsesMagick(path)) return LoadWithMagick(path, maxSide);
+
+        // 表示用(縮小しない・回転しない)は、Avalonia に直接読ませる。
+        // 自分で展開してから Avalonia の画像へ写すより、写す 1 回分だけ速く、読み込み中のメモリも半分で済む
+        if (maxSide == null && ReadOrientation(path) == 1)
+        {
+            try
+            {
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                return new Bitmap(fs);
+            }
+            catch (Exception ex) when (ex is not IOException and not UnauthorizedAccessException)
+            {
+                // Avalonia が読めない画像は、下の SkiaSharp の読み方で試す(読めなければ、そちらで例外になる)
+            }
+        }
+
         using var bmp = Decode(path, maxSide);
         return ToAvalonia(bmp);
     }
