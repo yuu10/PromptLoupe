@@ -452,10 +452,10 @@ public partial class MainWindow : Window
             if (seq != loadSeq) return;
             SetImage(null);
             EmptyPanel.IsVisible = true;
-            // 表示できない理由(HEIC・TIFF の部品がない環境など)は、ステータスバーだとフォルダの読み込みの表示に上書きされるので、ここにも出す
-            string hint = ImageLoader.UnsupportedHint(path);
+            // 表示できない理由(HEIC を読む OS の機能がない環境など)は、ステータスバーだとフォルダの読み込みの表示に上書きされるので、ここにも出す
+            string hint = ImageLoader.UnsupportedHint(ex);
             Placeholder.Text = hint.Length > 0 ? "画像を表示できません\n" + hint.Trim('(', ')') : "画像を表示できません";
-            Status.Text = $"読み込み失敗: {ex.Message}{ImageLoader.UnsupportedHint(path)}";
+            Status.Text = $"読み込み失敗: {ex.Message}{ImageLoader.UnsupportedHint(ex)}";
         }
 
         // 表示を切り替えてから、前後以外の画像を手放し、前後を先読みする
@@ -981,6 +981,21 @@ public partial class MainWindow : Window
         helpWindow.Show(this);
     }
 
+    LicenseWindow? licenseWindow;
+
+    /// <summary>ライセンス文を開く。すでに開いていれば前面に出す。</summary>
+    void License_Click(object? sender, RoutedEventArgs e)
+    {
+        if (licenseWindow != null)
+        {
+            licenseWindow.Activate();
+            return;
+        }
+        licenseWindow = new LicenseWindow();
+        licenseWindow.Closed += (_, _) => licenseWindow = null;
+        licenseWindow.Show(this);
+    }
+
     async void About_Click(object? sender, RoutedEventArgs e)
     {
         var asm = typeof(App).Assembly;
@@ -994,8 +1009,8 @@ public partial class MainWindow : Window
         await MessageDialog.Show(this,
             $"PromptLoupe(Avalonia 版・開発中)\nバージョン {version}\n{copyright}(MIT License)\n\n" +
             "AI生成画像のメタデータを元に、並び替え・絞り込みして閲覧できる画像ビューア\n\n" +
-            $"使用ライブラリ: Avalonia {avalonia}、SkiaSharp(どちらも MIT License)、Magick.NET(Apache License 2.0)など\n" +
-            "ライセンス文は、同梱の LICENSE・THIRD-PARTY-NOTICES.txt・THIRD-PARTY-NOTICES-Magick.NET.txt にあります。\n\n" +
+            $"使用ライブラリ: Avalonia {avalonia}、SkiaSharp(どちらも MIT License)、LibTiff.Net(BSD License)など\n" +
+            "ライセンス文は、メニューの「ヘルプ → ライセンス」で読めます。\n\n" +
             $"{RuntimeInformation.FrameworkDescription}  ・  {RuntimeInformation.OSDescription}",
             "バージョン情報");
     }

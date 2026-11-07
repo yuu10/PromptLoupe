@@ -76,8 +76,8 @@ jobs:
           Mac で動くかどうかを、まだ確かめていない試験版です。動いた・動かなかったなど、Issues で教えていただけると助かります。
 
           - Apple シリコン(M1 以降)の Mac: `PromptLoupe-Avalonia-*-osx-arm64.zip`
-          - Intel の Mac: `PromptLoupe-Avalonia-*-osx-x64.zip`(HEIC・TIFF は表示できません)
-          - macOS 12 以降。Apple シリコンでも、macOS 14 以前では HEIC・TIFF を表示できません
+          - Intel の Mac: `PromptLoupe-Avalonia-*-osx-x64.zip`
+          - macOS 12 以降
 
           zip を展開して、`PromptLoupe.app` をアプリケーションフォルダなどに移してください。Apple の公証を受けていないため、そのままでは「開けません」と表示されます。ターミナルで次を実行してから開いてください。
 

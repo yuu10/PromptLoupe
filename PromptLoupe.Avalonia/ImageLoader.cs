@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using ImageMagick;
+using BitMiracle.LibTiff.Classic;
 using PromptLoupe.Metadata;
 using SkiaSharp;
 
@@ -11,16 +11,22 @@ namespace PromptLoupe;
 /// <summary>
 /// 画像の読み込み。WPF 版の WIC の代わり。
 /// - PNG・JPEG・WebP・BMP・GIF(先頭フレーム)は SkiaSharp で読む。表示用で回転が要らないものは、Avalonia の Bitmap(Stream) に直接読ませる
-/// - HEIC・HEIF・TIFF(先頭ページ)は Magick.NET で読む。Magick.NET の部品がない・読み込めない環境(Intel の Mac、macOS 14 以前)では読めない(<see cref="UnsupportedHint"/>)
-/// - JPEG・WebP は EXIF の回転情報(Orientation)に従って向きを直す。値は WPF 版と同じく MetadataReader.ReadExif で読む。
-///   TIFF は Magick.NET の AutoOrient で直す。HEIC は libheif が irot・imir を当てて読むので、こちらでは回さない(二重に回る)
+/// - TIFF(先頭ページ)は LibTiff.NET で読む(どの OS でも。exe に入る)
+/// - HEIC・HEIF は OS の機能で読む(<see cref="HeifLoader"/>)。その機能がない環境では <see cref="UnsupportedHint"/> で入れ方を案内する
+/// - JPEG・WebP・TIFF は回転情報(Orientation)に従って向きを直す。JPEG・WebP の値は WPF 版と同じく MetadataReader.ReadExif で読む。
+///   HEIC は OS の機能が irot・imir を当てて返すので、こちらでは回さない(二重に回る)
 /// </summary>
 public static class ImageLoader
 {
     /// <summary>画像を読み込む。maxSide を指定すると、長辺がその大きさになるように縮小する(サムネイル用)。</summary>
     public static Bitmap Load(string path, int? maxSide = null)
     {
-        if (UsesMagick(path)) return LoadWithMagick(path, maxSide);
+        string ext = Path.GetExtension(path).ToLowerInvariant();
+        if (ext is ".tif" or ".tiff" or ".heic" or ".heif")
+        {
+            using var decoded = Shrink(ext is ".tif" or ".tiff" ? DecodeTiff(path) : HeifLoader.Decode(path, maxSide), maxSide);
+            return ToAvalonia(decoded);
+        }
 
         // 表示用(縮小しない・回転しない)は、Avalonia に直接読ませる。
         // 自分で展開してから Avalonia の画像へ写すより、写す 1 回分だけ速く、読み込み中のメモリも半分で済む
@@ -41,63 +47,64 @@ public static class ImageLoader
         return ToAvalonia(bmp);
     }
 
-    /// <summary>表示できない形式なら、その案内を返す(表示できる形式なら空)。</summary>
-    public static string UnsupportedHint(string path)
+    /// <summary>表示できなかったときに添える案内(HEIC を読む OS の機能がないときの入れ方。それ以外は空)。</summary>
+    public static string UnsupportedHint(Exception error) => error is HeifCodecMissingException ? HeifLoader.Hint : "";
+
+    // ───────── TIFF(LibTiff.NET) ─────────
+
+    /// <summary>LibTiff.NET の警告・エラーを、コンソールに出さない(読めないときは例外にする)。</summary>
+    sealed class QuietTiffErrors : TiffErrorHandler
     {
-        if (!UsesMagick(path) || MagickAvailable.Value) return "";
-        return Path.GetExtension(path).ToLowerInvariant() is ".heic" or ".heif"
-            ? "(この環境では HEIC を表示できません。メタデータは読めます)"
-            : "(この環境では TIFF を表示できません)";
+        public override void WarningHandler(Tiff tif, string method, string format, params object[] args) { }
+        public override void WarningHandlerExt(Tiff tif, object clientData, string method, string format, params object[] args) { }
+        public override void ErrorHandler(Tiff tif, string method, string format, params object[] args) { }
+        public override void ErrorHandlerExt(Tiff tif, object clientData, string method, string format, params object[] args) { }
     }
 
-    static bool UsesMagick(string path) =>
-        Path.GetExtension(path).ToLowerInvariant() is ".heic" or ".heif" or ".tif" or ".tiff";
-
-    /// <summary>Magick.NET の部品(Magick.Native)を読み込めるか。Intel の Mac(部品がない)や macOS 14 以前(Apple シリコン用は macOS 15 以降)では false。</summary>
-    static readonly Lazy<bool> MagickAvailable = new(() =>
+    static readonly Lazy<bool> TiffQuiet = new(() =>
     {
-        try
-        {
-            // Version は部品を読み込まずに返るので使えない。Delegates は部品(Magick.Native)を呼ぶ
-            _ = MagickNET.Delegates;
-            return true;
-        }
-        catch (Exception ex) when (ex is TypeInitializationException or DllNotFoundException or BadImageFormatException or EntryPointNotFoundException)
-        {
-            return false;
-        }
+        Tiff.SetErrorHandler(new QuietTiffErrors());
+        return true;
     });
 
-    static Bitmap LoadWithMagick(string path, int? maxSide)
+    /// <summary>
+    /// TIFF の先頭ページを読む。LibTiff の RGBA 読み出しは、CMYK・16 ビット・パレット・JPEG 圧縮などを 8 ビットの RGBA にそろえて返す
+    /// (アルファは乗算済み)。回転は自分で直す: LibTiff の RGBA 読み出しは Orientation 5〜8 の回転を扱わない(左右・上下の反転だけ)ので、
+    /// 保存されたままの並びで読み出し(要求する向きをファイルと同じ系統にすると反転しない)、ApplyOrientation で 1〜8 をまとめて直す
+    /// </summary>
+    static SKBitmap DecodeTiff(string path)
     {
-        if (!MagickAvailable.Value) throw new NotSupportedException("この形式の画像は読めません");
+        _ = TiffQuiet.Value;
+        using var tif = Tiff.Open(path, "r") ?? throw new InvalidDataException("TIFF を開けませんでした");
 
-        // 複数ページの TIFF は、先頭のページだけ読む
-        var settings = new MagickReadSettings { FrameIndex = 0, FrameCount = 1 };
-        using var image = new MagickImage(path, settings);
+        int w = tif.GetField(TiffTag.IMAGEWIDTH)?[0].ToInt() ?? 0;
+        int h = tif.GetField(TiffTag.IMAGELENGTH)?[0].ToInt() ?? 0;
+        if (w <= 0 || h <= 0) throw new InvalidDataException("TIFF の大きさを読めませんでした");
+        int orientation = tif.GetField(TiffTag.ORIENTATION)?[0].ToInt() ?? 1;
+        if (orientation is < 1 or > 8) orientation = 1;
 
-        bool heif = Path.GetExtension(path).ToLowerInvariant() is ".heic" or ".heif";
-        if (!heif) image.AutoOrient();
+        // ファイルの向き(5〜8 は LibTiff では 1〜4 と同じ扱い)をそのまま要求すると、並べ替えずに読み出す
+        var asStored = (Orientation)(orientation > 4 ? orientation - 4 : orientation);
+        var raster = new int[checked(w * h)];
+        if (!tif.ReadRGBAImageOriented(w, h, raster, asStored))
+            throw new InvalidDataException("TIFF を読めませんでした(対応していない形式です)");
 
-        if (maxSide is int max && Math.Max(image.Width, image.Height) > max)
-            image.Thumbnail(new MagickGeometry((uint)max, (uint)max)); // 縦横比は保つ
+        // raster の 1 画素は、メモリ上で R・G・B・A の順(アルファは乗算済み)
+        var bmp = new SKBitmap(new SKImageInfo(w, h, SKColorType.Rgba8888, SKAlphaType.Premul));
+        Marshal.Copy(raster, 0, bmp.GetPixels(), raster.Length);
+        return ApplyOrientation(bmp, orientation);
+    }
 
-        image.ColorSpace = ColorSpace.sRGB;
-        image.Depth = 8; // 16 ビットの画像は、そのままだと 1 色 2 バイトで書き出される
-        byte[] pixels = image.ToByteArray(MagickFormat.Bgra); // 1 画素 4 バイト、アルファは乗算していない
-        int w = (int)image.Width, h = (int)image.Height;
-        if (pixels.Length != w * h * 4) throw new InvalidDataException("画像を読めませんでした(画素の形式が違います)");
-        var handle = GCHandle.Alloc(pixels, GCHandleType.Pinned);
-        try
-        {
-            // Bitmap は画素を自分の領域に写すので、固定は作る間だけでよい
-            return new Bitmap(PixelFormat.Bgra8888, AlphaFormat.Unpremul, handle.AddrOfPinnedObject(),
-                new PixelSize(w, h), new Vector(96, 96), w * 4);
-        }
-        finally
-        {
-            handle.Free();
-        }
+    /// <summary>長辺が maxSide を超えていたら縮小した画像を返し、元の画像は捨てる(超えていなければ、元の画像をそのまま返す)。</summary>
+    static SKBitmap Shrink(SKBitmap src, int? maxSide)
+    {
+        if (maxSide is not int m || Math.Max(src.Width, src.Height) <= m) return src;
+        double s = (double)m / Math.Max(src.Width, src.Height);
+        var small = new SKImageInfo(Math.Max(1, (int)Math.Round(src.Width * s)), Math.Max(1, (int)Math.Round(src.Height * s)),
+            SKColorType.Bgra8888, SKAlphaType.Premul);
+        var resized = src.Resize(small, SKFilterQuality.Medium);
+        src.Dispose();
+        return resized ?? throw new InvalidDataException("縮小できませんでした");
     }
 
     static SKBitmap Decode(string path, int? maxSide)
@@ -173,7 +180,15 @@ public static class ImageLoader
         return dst;
     }
 
-    static Bitmap ToAvalonia(SKBitmap bmp) =>
-        new(PixelFormat.Bgra8888, AlphaFormat.Premul, bmp.GetPixels(),
-            new PixelSize(bmp.Width, bmp.Height), new Vector(96, 96), bmp.RowBytes);
+    static Bitmap ToAvalonia(SKBitmap bmp)
+    {
+        var format = bmp.ColorType switch
+        {
+            SKColorType.Bgra8888 => PixelFormat.Bgra8888,
+            SKColorType.Rgba8888 => PixelFormat.Rgba8888,
+            _ => throw new InvalidDataException($"画素の形式に対応していません({bmp.ColorType})"),
+        };
+        var alpha = bmp.AlphaType == SKAlphaType.Unpremul ? AlphaFormat.Unpremul : AlphaFormat.Premul;
+        return new Bitmap(format, alpha, bmp.GetPixels(), new PixelSize(bmp.Width, bmp.Height), new Vector(96, 96), bmp.RowBytes);
+    }
 }

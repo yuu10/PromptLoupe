@@ -40,7 +40,9 @@ Mac 版は、**動作を確かめていない試験版**として Releases に�
 
 WPF 版との違い(今のところ):
 
-- WebP・HEIC は、Windows の拡張機能がなくても表示できます(HEIC・TIFF は Magick.NET で読みます)。ただし Intel の Mac と macOS 14 以前の Mac では HEIC・TIFF を表示できません(Magick.NET 15 の部品が、Intel の Mac に対応せず、Apple シリコン用は macOS 15 以降のため)
+- WebP は、Windows の拡張機能がなくても表示できます。TIFF は LibTiff.Net で読みます(どの OS でも)
+- HEIC は OS の機能で読みます(Windows は WIC。WPF 版と同じく「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」が必要。Mac は ImageIO。Linux はその PC の libheif と HEVC のプラグイン)。HEVC のデコーダーは LGPL などで exe に入れられないため、同梱していません
+- 配布物は exe だけです。ライセンス文は exe に入っていて、「ヘルプ → ライセンス」で読めます
 - Linux では、一覧からのドラッグでの持ち出しができません(Avalonia 11.3 が、Linux でほかのアプリへのドラッグに対応していないため)。コピー(Ctrl+C)してファイルマネージャーに貼り付けてください
 - ファイルの切り取り(Ctrl+X)は、Windows はエクスプローラー、Linux は GNOME・KDE のファイルマネージャーに「移動」として伝わります。Mac の Finder には伝わらず、Finder に貼り付けるとコピーになります
 - プロパティは Windows のみです
@@ -165,7 +167,7 @@ PromptLoupe は [MIT License](LICENSE) で配布しています(Copyright (c) 20
 ModernWpfUI のライセンス文は [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) にあります。
 `LICENSE` と `THIRD-PARTY-NOTICES.txt` は、ビルド・発行のたびに出力先へコピーされます。配布するときは、この2つを exe と一緒に入れてください。
 
-Avalonia 版は、Avalonia(MIT)・SkiaSharp・HarfBuzzSharp(MIT)・MicroCom.Runtime(MIT)・Tmds.DBus.Protocol(MIT)・ANGLE(BSD 3-Clause)・Magick.NET(Apache 2.0。中の libheif・libde265 は LGPL-3.0)と、SkiaSharp・Magick.NET に含まれる Skia・ImageMagick などのライブラリを使っています。ライセンス文は [PromptLoupe.Avalonia/THIRD-PARTY-NOTICES.txt](PromptLoupe.Avalonia/THIRD-PARTY-NOTICES.txt) と、Magick.NET のパッケージに入っている Notice.txt(出力先では `THIRD-PARTY-NOTICES-Magick.NET.txt`)にあり、Avalonia 版のビルド・発行の出力先にコピーされます(WPF 版のものとは別のファイルです)。LGPL の部分を差し替えられるように、`Magick.Native-*` は単一ファイルの exe に埋め込まず、別のファイルで置いています。
+Avalonia 版は、Avalonia(MIT)・SkiaSharp・HarfBuzzSharp(MIT)・MicroCom.Runtime(MIT)・Tmds.DBus.Protocol(MIT)・ANGLE(BSD 3-Clause)・LibTiff.Net(BSD 3-Clause)と、SkiaSharp に含まれる Skia などのライブラリを使っています。ライセンス文は [PromptLoupe.Avalonia/THIRD-PARTY-NOTICES.txt](PromptLoupe.Avalonia/THIRD-PARTY-NOTICES.txt)(WPF 版のものとは別のファイル)にあり、`LICENSE` とともに exe に埋め込んで、アプリの「ヘルプ → ライセンス」で表示します。
 
 ## 既知の制限
 
