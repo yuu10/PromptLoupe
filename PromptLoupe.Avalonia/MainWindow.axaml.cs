@@ -452,7 +452,9 @@ public partial class MainWindow : Window
             if (seq != loadSeq) return;
             SetImage(null);
             EmptyPanel.IsVisible = true;
-            Placeholder.Text = "画像を表示できません";
+            // 表示できない理由(HEIC・TIFF の部品がない環境など)は、ステータスバーだとフォルダの読み込みの表示に上書きされるので、ここにも出す
+            string hint = ImageLoader.UnsupportedHint(path);
+            Placeholder.Text = hint.Length > 0 ? "画像を表示できません\n" + hint.Trim('(', ')') : "画像を表示できません";
             Status.Text = $"読み込み失敗: {ex.Message}{ImageLoader.UnsupportedHint(path)}";
         }
 

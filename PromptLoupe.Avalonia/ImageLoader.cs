@@ -58,7 +58,8 @@ public static class ImageLoader
     {
         try
         {
-            _ = MagickNET.Version;
+            // Version は部品を読み込まずに返るので使えない。Delegates は部品(Magick.Native)を呼ぶ
+            _ = MagickNET.Delegates;
             return true;
         }
         catch (Exception ex) when (ex is TypeInitializationException or DllNotFoundException or BadImageFormatException or EntryPointNotFoundException)
