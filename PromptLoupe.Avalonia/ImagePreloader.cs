@@ -20,6 +20,12 @@ public sealed class ImagePreloader
 
     readonly Dictionary<string, Entry> entries = new(StringComparer.OrdinalIgnoreCase);
 
+    // 【調査用・一時的】画像ごとの展開にかかった時間(ミリ秒)。ステータスバーに出して、重さの原因を切り分ける
+    readonly System.Collections.Concurrent.ConcurrentDictionary<string, double> decodeMs = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>【調査用】その画像の展開にかかった時間(ミリ秒)。まだ読み終わっていなければ null。</summary>
+    public double? DecodeMilliseconds(string path) => decodeMs.TryGetValue(path, out var ms) ? ms : null;
+
     /// <summary>画像を返す。先読み済みならすぐ終わる。読めなければ例外。</summary>
     public Task<Bitmap> Get(string path)
     {
@@ -31,7 +37,13 @@ public sealed class ImagePreloader
             entries.Remove(path);
         }
 
-        var task = Task.Run(() => ImageLoader.Load(path));
+        var task = Task.Run(() =>
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var bmp = ImageLoader.Load(path);
+            decodeMs[path] = sw.Elapsed.TotalMilliseconds;
+            return bmp;
+        });
         entries[path] = new Entry { Task = task, Stamp = stamp };
         return task;
     }
