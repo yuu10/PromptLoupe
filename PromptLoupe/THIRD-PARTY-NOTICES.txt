@@ -1,5 +1,5 @@
-PromptLoupe(Avalonia 版)は、次のソフトウェアを使用しています。
-PromptLoupe (Avalonia edition) uses the following third-party software.
+PromptLoupe は、次のソフトウェアを使用しています。
+PromptLoupe uses the following third-party software.
 
   - Avalonia 11.3.22(Avalonia・Avalonia.Desktop・Avalonia.Themes.Fluent・Avalonia.Skia・
     Avalonia.Win32・Avalonia.X11・Avalonia.FreeDesktop・Avalonia.Native・Avalonia.Remote.Protocol)

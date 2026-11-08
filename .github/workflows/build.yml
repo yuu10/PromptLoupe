@@ -1,4 +1,5 @@
-# main と claude/ のブランチへのプッシュ、PR のたびに、ビルドとテストが通るかを確かめる
+# main と claude/ のブランチへのプッシュ、PR のたびに、ビルドとテストが通るかを確かめる。
+# あわせて、配布と同じ形(自己完結型・単一ファイル)に発行して、確認用に Actions の成果物(Artifacts)に置く(14 日で消える)
 name: ビルド
 
 on:
@@ -7,25 +8,8 @@ on:
   pull_request:
 
 jobs:
-  build:
-    # WPF は Windows でしかビルドできない
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: 復元
-        run: dotnet restore
-
-      - name: ビルド
-        run: dotnet build -c Release --no-restore
-
   test:
-    # 共通部分(PromptLoupe.Core)は OS に依存しないので、Linux でテストする
+    # 共通部分(PromptLoupe.Core)のテスト。OS に依存しないので Linux で行う
     runs-on: ubuntu-latest
 
     steps:
@@ -38,11 +22,8 @@ jobs:
       - name: テスト
         run: dotnet test PromptLoupe.Tests -c Release
 
-  avalonia:
-    # Avalonia 版(開発中)。Windows・Linux でビルドが通るかを確かめる(画面の動作までは確かめない)。
-    # Mac(macos-latest)は、実行環境が割り当てられないまま 15 分で取り消され、CI 全体が失敗になるので外した(2026-11-04)
-    # 配布と同じ形(自己完結型・単一ファイル)で発行し、確認用に Actions の成果物(Artifacts)として置く。
-    # Releases には出さない(確認していない OS には配布しない方針)
+  app:
+    # Windows・Linux 向け。それぞれの OS の上でビルドと発行が通るかを確かめる(画面の動作までは確かめない)
     strategy:
       fail-fast: false
       matrix:
@@ -61,11 +42,11 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: ビルド
-        run: dotnet build PromptLoupe.Avalonia -c Release
+        run: dotnet build PromptLoupe -c Release
 
       - name: 発行(確認用)
         run: >
-          dotnet publish PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj -c Release -r ${{ matrix.rid }}
+          dotnet publish PromptLoupe/PromptLoupe.csproj -c Release -r ${{ matrix.rid }}
           --self-contained true
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
@@ -76,13 +57,13 @@ jobs:
       - name: 成果物として置く
         uses: actions/upload-artifact@v4
         with:
-          name: PromptLoupe-Avalonia-${{ matrix.rid }}
+          name: PromptLoupe-${{ matrix.rid }}
           path: publish/
           retention-days: 14
 
   macos:
-    # Mac 版(動作未確認)。Mac の実行環境は割り当てられないことがあるので、Linux の上で Mac 向けに作る。
-    # .NET SDK は Linux でも本体にアドホック署名を付ける。.app 全体の署名は rcodesign で付ける
+    # Mac 向け(試験版・実機では未確認)。Mac の実行環境は割り当てられないことがある(2026-11-04 に 2 回とも 15 分待って取り消し)ので、
+    # Linux の上で Mac 向けに作る。.NET SDK は Linux でも本体にアドホック署名を付ける。.app 全体の署名は rcodesign で付ける
     strategy:
       fail-fast: false
       matrix:
@@ -101,7 +82,7 @@ jobs:
 
       - name: 発行
         run: >
-          dotnet publish PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj -c Release -r ${{ matrix.rid }}
+          dotnet publish PromptLoupe/PromptLoupe.csproj -c Release -r ${{ matrix.rid }}
           --self-contained true
           -p:PublishSingleFile=true
           -p:EnableCompressionInSingleFile=true
@@ -110,17 +91,17 @@ jobs:
 
       - name: .app にまとめて署名する
         run: |
-          version=$(grep -oP '(?<=<Version>)[^<]+' PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj)
+          version=$(grep -oP '(?<=<Version>)[^<]+' PromptLoupe/PromptLoupe.csproj)
           mkdir -p out
           bash tools/make_macos_app.sh publish out "$version"
           # rcodesign の verify は、アドホック署名(証明書なし)を正しく扱えない。署名の中身が読めることと、.app の署名(CodeResources)があることを確かめる
           rcodesign print-signature-info out/PromptLoupe.app/Contents/MacOS/PromptLoupe | grep -q code_directory
           test -f out/PromptLoupe.app/Contents/_CodeSignature/CodeResources
-          cd out && zip -qry "../PromptLoupe-Avalonia-${{ matrix.rid }}.zip" PromptLoupe.app
+          cd out && zip -qry "../PromptLoupe-${{ matrix.rid }}.zip" PromptLoupe.app
 
       - name: 成果物として置く
         uses: actions/upload-artifact@v4
         with:
-          name: PromptLoupe-Avalonia-${{ matrix.rid }}
-          path: PromptLoupe-Avalonia-${{ matrix.rid }}.zip
+          name: PromptLoupe-${{ matrix.rid }}
+          path: PromptLoupe-${{ matrix.rid }}.zip
           retention-days: 14

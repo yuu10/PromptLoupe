@@ -21,8 +21,8 @@ chmod +x "$app/Contents/MacOS/PromptLoupe"
 # Contents/MacOS にはプログラムだけを置く決まり(署名の都合)。文書があれば Resources へ移す
 # (今はライセンス文も exe に埋め込んでいるので、ふつうは何もない)
 find "$app/Contents/MacOS" -maxdepth 1 -type f \( -name '*.txt' -o -name 'LICENSE' \) -exec mv {} "$app/Contents/Resources/" \;
-sed "s/@VERSION@/$version/g" "$here/PromptLoupe.Avalonia/macos/Info.plist" > "$app/Contents/Info.plist"
-cp "$here/PromptLoupe.Avalonia/macos/PromptLoupe.icns" "$app/Contents/Resources/"
+sed "s/@VERSION@/$version/g" "$here/PromptLoupe/macos/Info.plist" > "$app/Contents/Info.plist"
+cp "$here/PromptLoupe/macos/PromptLoupe.icns" "$app/Contents/Resources/"
 
 if command -v rcodesign >/dev/null 2>&1; then
   rcodesign sign "$app"

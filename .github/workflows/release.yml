@@ -1,4 +1,4 @@
-# v で始まるタグ(例: v1.6.0)を push したら、配布用の zip を作って Releases に下書きで載せる
+# v で始まるタグ(例: v2.0.0)を push したら、Windows・Mac・Linux 向けの配布物を作って Releases に下書きで載せる
 # 中身を確かめてから、GitHub の画面で「Publish release」を押して公開する
 name: リリース
 
@@ -10,8 +10,83 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    # WPF は Windows でしかビルドできない
+  draft:
+    # タグと PromptLoupe/PromptLoupe.csproj の <Version> を確かめて、下書きを作る。配布物は下のジョブが加える
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: バージョンの確認
+        id: version
+        run: |
+          tag="${{ github.ref_name }}"
+          version=$(grep -oP '(?<=<Version>)[^<]+' PromptLoupe/PromptLoupe.csproj)
+          if [ "${tag#v}" != "$version" ]; then
+            echo "タグ ($tag) と PromptLoupe/PromptLoupe.csproj の Version ($version) が一致しません" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Releases に下書きを作る
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > notes.md <<'NOTES'
+          ## ダウンロード
+
+          | OS | ファイル | 動作の確認 |
+          |---|---|---|
+          | Windows 10・11(64 ビット) | `PromptLoupe-*-win-x64.zip` | 確認済み |
+          | Mac(Apple シリコン・M1 以降) | `PromptLoupe-*-osx-arm64.zip` | **未確認(試験版)** |
+          | Mac(Intel) | `PromptLoupe-*-osx-x64.zip` | **未確認(試験版)** |
+          | Linux(x64) | `PromptLoupe-*-linux-x64.tar.gz` | 自動の確認のみ(実機では未確認) |
+
+          どれも .NET のインストールは不要です。
+
+          ### Windows
+
+          zip を展開して、`PromptLoupe.exe` を実行してください。
+
+          - コード署名をしていないため、初めて起動するときに「Windows によって PC が保護されました」と表示されることがあります。「詳細情報」→「実行」で起動できます。
+          - HEIC の表示には、Microsoft Store の「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」が必要です。
+
+          ### Mac(試験版・動作未確認)
+
+          Mac の実機では、まだ動作を確かめていません。動いた・動かなかったなど、Issues で教えていただけると助かります。
+
+          zip を展開して、`PromptLoupe.app` をアプリケーションフォルダなどに移してください。Apple の公証を受けていないため、そのままでは「開けません」と表示されます。ターミナルで次を実行してから開いてください。
+
+          ```
+          xattr -cr /Applications/PromptLoupe.app
+          ```
+
+          macOS 12 以降が対象です。
+
+          ### Linux(実機では未確認)
+
+          開発用のクラウド環境(Ubuntu)で、AI による自動の確認(起動・画像の表示・HEIC と TIFF の表示・ファイル操作)は済んでいますが、実機のデスクトップでは確かめていません。気づいた点は Issues で教えてください。
+
+          ```
+          tar -xzf PromptLoupe-*-linux-x64.tar.gz
+          ./PromptLoupe
+          ```
+
+          - HEIC の表示には、libheif と HEVC のプラグインが必要です(Ubuntu なら `sudo apt install libheif1 libheif-plugin-libde265`)。
+          - Linux では、一覧からほかのアプリへのドラッグでの持ち出しはできません(コピーして貼り付けてください)。
+
+          ## 変更点
+
+          (ここに書く)
+          NOTES
+          gh release create "${{ github.ref_name }}" --draft \
+            --title "PromptLoupe ${{ steps.version.outputs.version }}" --notes-file notes.md
+
+  windows:
+    # Windows 版は、Windows の上で作る(確認に使ってきた CI の成果物と同じ作り方)
+    needs: draft
     runs-on: windows-latest
 
     steps:
@@ -21,23 +96,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      # タグと PromptLoupe.csproj の <Version> が食い違っていたら止める
-      - name: バージョンの確認
-        id: version
-        shell: pwsh
-        run: |
-          $tag = "${{ github.ref_name }}".TrimStart('v')
-          $version = ([xml](Get-Content PromptLoupe.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
-          if ($tag -ne $version) {
-            Write-Error "タグ ($tag) と csproj の Version ($version) が一致しません"
-            exit 1
-          }
-          "version=$version" >> $env:GITHUB_OUTPUT
-
       # .NET を入れていない PC でも動くように、自己完結型の単一 exe にする
       - name: 発行
         run: >
-          dotnet publish PromptLoupe.csproj -c Release -r win-x64
+          dotnet publish PromptLoupe/PromptLoupe.csproj -c Release -r win-x64
           --self-contained true
           -p:PublishSingleFile=true
           -p:IncludeNativeLibrariesForSelfExtract=true
@@ -45,56 +107,50 @@ jobs:
           -p:DebugType=none
           -o publish
 
-      - name: zip にまとめる
-        shell: pwsh
-        run: |
-          $zip = "PromptLoupe-${{ steps.version.outputs.version }}-win-x64.zip"
-          Compress-Archive -Path publish/* -DestinationPath $zip
-          "ZIP=$zip" >> $env:GITHUB_ENV
-
-      - name: Releases に下書きを作る
+      - name: zip にまとめて、下書きに加える
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $notes = @'
-          ## ダウンロード
+          $zip = "PromptLoupe-${{ needs.draft.outputs.version }}-win-x64.zip"
+          Compress-Archive -Path publish/* -DestinationPath $zip
+          gh release upload "${{ github.ref_name }}" $zip
 
-          `PromptLoupe-*-win-x64.zip` を展開して、`PromptLoupe.exe` を実行してください。.NET のインストールは不要です。
+  linux:
+    needs: draft
+    runs-on: ubuntu-latest
 
-          ## 初めて起動するとき
+    steps:
+      - uses: actions/checkout@v4
 
-          コード署名をしていないため、「Windows によって PC が保護されました」と表示されることがあります。「詳細情報」→「実行」で起動できます。
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-          ## 必要なもの
+      - name: 発行
+        run: >
+          dotnet publish PromptLoupe/PromptLoupe.csproj -c Release -r linux-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -o publish
 
-          - WebP の表示: Windows の「WebP 画像拡張機能」
-          - HEIC の表示: 「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」
-
-          ## Mac 版(試験版・動作未確認)
-
-          Mac で動くかどうかを、まだ確かめていない試験版です。動いた・動かなかったなど、Issues で教えていただけると助かります。
-
-          - Apple シリコン(M1 以降)の Mac: `PromptLoupe-Avalonia-*-osx-arm64.zip`
-          - Intel の Mac: `PromptLoupe-Avalonia-*-osx-x64.zip`
-          - macOS 12 以降
-
-          zip を展開して、`PromptLoupe.app` をアプリケーションフォルダなどに移してください。Apple の公証を受けていないため、そのままでは「開けません」と表示されます。ターミナルで次を実行してから開いてください。
-
-          ```
-          xattr -cr /Applications/PromptLoupe.app
-          ```
-
-          ## 変更点
-
-          (ここに書く)
-          '@
-          gh release create "${{ github.ref_name }}" $env:ZIP --draft --title "PromptLoupe ${{ steps.version.outputs.version }}" --notes $notes
+      # 実行の権限を残すため、zip ではなく tar.gz にする
+      - name: tar.gz にまとめて、下書きに加える
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          name="PromptLoupe-${{ needs.draft.outputs.version }}-linux-x64.tar.gz"
+          chmod +x publish/PromptLoupe
+          tar -czf "$name" -C publish .
+          gh release upload "${{ github.ref_name }}" "$name"
 
   macos:
-    # Mac 版(試験版・動作未確認)。Linux の上で Mac 向けに作り、上のジョブが作った下書きに加える。
-    # Mac の実行環境は割り当てられないことがあるので使わない。署名はアドホック(Apple の証明書・公証はなし)
-    needs: release
+    # Mac 版(試験版・実機では未確認)。Linux の上で Mac 向けに作る(Mac の実行環境は割り当てられないことがあるため)。
+    # 署名はアドホック(Apple の証明書・公証はなし)
+    needs: draft
     strategy:
       matrix:
         rid: [osx-arm64, osx-x64]
@@ -112,29 +168,23 @@ jobs:
 
       - name: 発行
         run: >
-          dotnet publish PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj -c Release -r ${{ matrix.rid }}
+          dotnet publish PromptLoupe/PromptLoupe.csproj -c Release -r ${{ matrix.rid }}
           --self-contained true
           -p:PublishSingleFile=true
           -p:EnableCompressionInSingleFile=true
           -p:DebugType=none
           -o publish
 
-      # Avalonia 版の <Version> も、タグと合っていなければ止める
       - name: .app にまとめて、下書きに加える
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tag="${{ github.ref_name }}"
-          version=$(grep -oP '(?<=<Version>)[^<]+' PromptLoupe.Avalonia/PromptLoupe.Avalonia.csproj)
-          if [ "${tag#v}" != "$version" ]; then
-            echo "タグ ($tag) と PromptLoupe.Avalonia.csproj の Version ($version) が一致しません" >&2
-            exit 1
-          fi
+          version="${{ needs.draft.outputs.version }}"
           mkdir -p out
           bash tools/make_macos_app.sh publish out "$version"
           # rcodesign の verify は、アドホック署名(証明書なし)を正しく扱えない。署名の中身が読めることと、.app の署名(CodeResources)があることを確かめる
           rcodesign print-signature-info out/PromptLoupe.app/Contents/MacOS/PromptLoupe | grep -q code_directory
           test -f out/PromptLoupe.app/Contents/_CodeSignature/CodeResources
-          zip_name="PromptLoupe-Avalonia-$version-${{ matrix.rid }}.zip"
+          zip_name="PromptLoupe-$version-${{ matrix.rid }}.zip"
           (cd out && zip -qry "../$zip_name" PromptLoupe.app)
-          gh release upload "$tag" "$zip_name"
+          gh release upload "${{ github.ref_name }}" "$zip_name"
