@@ -77,7 +77,8 @@ C# / Avalonia 11.3 / .NET 10。バージョンは `PromptLoupe/PromptLoupe.cspro
 
 ## 次にやること(候補)
 
-- フォルダのパスの欄とフォルダツリー(2026-11-08。イメージ画像を見てユーザーが決めた形)。Windows・Mac での確認はまだ。
+- フォルダのパスの欄とフォルダツリー(2026-11-08。イメージ画像を見てユーザーが決めた形)。Windows ではユーザーが「動作確認 OK」(2026-11-08)。Mac は未確認。
+- 一覧のフォルダ名の色分け(`FileItem.FolderPart` を `Run` で `FolderPartBrush` の色に。ダーク #E7B54A・ライト #9A6400。ツリーのアイコンと同じ系統。テーマ別の色は `Window.Resources` の中に `ResourceDictionary` を置いて `ThemeDictionaries` に書く。直接書くとビルドエラー)と、右クリックの「画像のあるフォルダへ移動」(`FileOp_GoToFolder`。1 枚選択で、いまのフォルダの直下でないときだけ)(2026-11-08。Linux の Headless で確認、Windows は未確認)。
 
 - 1.7.0(WPF 版の最後)を 2026-11-05 にリリースした(ユーザーが公開)。2.0.0(Avalonia 版。Windows・Mac・Linux)を 2026-11-08 にリリースした(ユーザーが公開)。release.yml の 5 つのジョブ(下書き・Windows・Mac 2 種・Linux)は初回で成功した。
 - README の画面写真(`docs/images/main.png`)は WPF 版のまま(ユーザーの判断で差し替えない。2026-11-08)。

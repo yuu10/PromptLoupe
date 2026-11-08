@@ -13,6 +13,8 @@ public sealed class FileItem : INotifyPropertyChanged
     {
         Path = path;
         Display = System.IO.Path.GetRelativePath(rootFolder, path);
+        string? dir = System.IO.Path.GetDirectoryName(Display);
+        FolderPart = string.IsNullOrEmpty(dir) ? "" : dir + System.IO.Path.DirectorySeparatorChar;
         var fi = new FileInfo(path);
         Modified = fi.LastWriteTime;
         Size = fi.Length;
@@ -23,6 +25,9 @@ public sealed class FileItem : INotifyPropertyChanged
 
     /// <summary>開いたフォルダからの相対パス(サブフォルダ読み込み時にフォルダ構成が分かるように)。</summary>
     public string Display { get; }
+
+    /// <summary>Display のうちフォルダの部分(「人物/」など。開いたフォルダの直下の画像なら空)。一覧で色を変えて出す。</summary>
+    public string FolderPart { get; }
     public DateTime Modified { get; }
     public long Size { get; }
 

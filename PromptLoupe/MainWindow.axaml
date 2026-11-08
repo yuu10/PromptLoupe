@@ -6,39 +6,54 @@
         Width="1400" Height="840" MinWidth="900" MinHeight="520"
         DragDrop.AllowDrop="True">
     <Window.Resources>
-        <x:Double x:Key="ThumbSize">64</x:Double>
+        <ResourceDictionary>
+            <!-- 一覧のファイル名の前のフォルダ名(サブフォルダを読み込んだとき)。フォルダツリーのアイコンと同じ系統の色 -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="FolderPartBrush" Color="#E7B54A" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="FolderPartBrush" Color="#9A6400" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <x:Double x:Key="ThumbSize">64</x:Double>
 
-        <!-- パラメーターの1行(名前 + 値) -->
-        <DataTemplate x:Key="ParamRow" x:DataType="local:KeyValue">
-            <Grid Margin="0,2" ColumnDefinitions="104,*">
-                <TextBlock Text="{Binding Key}" Classes="muted" TextTrimming="CharacterEllipsis"
-                           ToolTip.Tip="{Binding Key}" VerticalAlignment="Top" />
-                <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
-            </Grid>
-        </DataTemplate>
+            <!-- パラメーターの1行(名前 + 値) -->
+            <DataTemplate x:Key="ParamRow" x:DataType="local:KeyValue">
+                <Grid Margin="0,2" ColumnDefinitions="104,*">
+                    <TextBlock Text="{Binding Key}" Classes="muted" TextTrimming="CharacterEllipsis"
+                               ToolTip.Tip="{Binding Key}" VerticalAlignment="Top" />
+                    <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                </Grid>
+            </DataTemplate>
 
-        <!-- 一覧の項目: サムネイルなし -->
-        <DataTemplate x:Key="TextItemTemplate" x:DataType="local:FileItem">
-            <StackPanel Margin="2,3" ToolTip.Tip="{Binding Path}">
-                <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis" />
-                <TextBlock Text="{Binding Summary}" FontSize="11" Classes="muted" TextTrimming="CharacterEllipsis" />
-            </StackPanel>
-        </DataTemplate>
-
-        <!-- 一覧の項目: サムネイルあり(大きさは設定で変わる ThumbSize を参照) -->
-        <DataTemplate x:Key="ThumbItemTemplate" x:DataType="local:FileItem">
-            <DockPanel Margin="2,3" ToolTip.Tip="{Binding Path}">
-                <Border DockPanel.Dock="Left" Width="{DynamicResource ThumbSize}" Height="{DynamicResource ThumbSize}"
-                        CornerRadius="4" ClipToBounds="True" Background="#2A2A2A">
-                    <Image Source="{Binding Thumbnail}" Stretch="Uniform"
-                           RenderOptions.BitmapInterpolationMode="HighQuality" />
-                </Border>
-                <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis" />
+            <!-- 一覧の項目: サムネイルなし -->
+            <DataTemplate x:Key="TextItemTemplate" x:DataType="local:FileItem">
+                <StackPanel Margin="2,3" ToolTip.Tip="{Binding Path}">
+                    <TextBlock TextTrimming="CharacterEllipsis">
+                        <Run Text="{Binding FolderPart}" Foreground="{DynamicResource FolderPartBrush}" /><Run Text="{Binding Name}" />
+                    </TextBlock>
                     <TextBlock Text="{Binding Summary}" FontSize="11" Classes="muted" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
-            </DockPanel>
-        </DataTemplate>
+            </DataTemplate>
+
+            <!-- 一覧の項目: サムネイルあり(大きさは設定で変わる ThumbSize を参照) -->
+            <DataTemplate x:Key="ThumbItemTemplate" x:DataType="local:FileItem">
+                <DockPanel Margin="2,3" ToolTip.Tip="{Binding Path}">
+                    <Border DockPanel.Dock="Left" Width="{DynamicResource ThumbSize}" Height="{DynamicResource ThumbSize}"
+                            CornerRadius="4" ClipToBounds="True" Background="#2A2A2A">
+                        <Image Source="{Binding Thumbnail}" Stretch="Uniform"
+                               RenderOptions.BitmapInterpolationMode="HighQuality" />
+                    </Border>
+                    <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                        <TextBlock TextTrimming="CharacterEllipsis">
+                            <Run Text="{Binding FolderPart}" Foreground="{DynamicResource FolderPartBrush}" /><Run Text="{Binding Name}" />
+                        </TextBlock>
+                        <TextBlock Text="{Binding Summary}" FontSize="11" Classes="muted" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DockPanel>
+            </DataTemplate>
+        </ResourceDictionary>
     </Window.Resources>
 
     <Window.Styles>
@@ -331,6 +346,8 @@
                         <ContextMenu x:Name="FileMenu" Opening="FileMenu_Opening">
                             <MenuItem x:Name="FmOpen" Header="既定のアプリで開く(_O)" Click="FileOp_OpenDefault" />
                             <MenuItem x:Name="FmReveal" Header="ファイルマネージャーで表示(_E)" Click="FileOp_Reveal" />
+                            <MenuItem x:Name="FmGoToFolder" Header="画像のあるフォルダへ移動(_G)" Click="FileOp_GoToFolder"
+                                      ToolTip.Tip="この画像が入っているフォルダを開きます(サブフォルダを読み込んでいるとき)" />
                             <Separator />
                             <MenuItem x:Name="FmCut" Header="切り取り(_T)" Click="FileOp_Cut" />
                             <MenuItem x:Name="FmCopy" Header="コピー(_C)" Click="FileOp_Copy" />

@@ -23,6 +23,8 @@ public partial class MainWindow
 
         FmOpen.IsEnabled = n == 1;
         FmReveal.IsEnabled = n > 0 || currentFolder != null;
+        FmGoToFolder.IsEnabled = n == 1 && FolderOf(sel[0]) is { } dir
+                                 && (currentFolder == null || !FolderPath.Equal(dir, currentFolder, FolderPath.Comparison));
         FmCut.IsEnabled = FmCopy.IsEnabled = FmCopyPath.IsEnabled = n > 0;
         FmRename.IsEnabled = n == 1;
         FmCopyImage.IsEnabled = FmProps.IsEnabled = n == 1;
@@ -45,6 +47,21 @@ public partial class MainWindow
     {
         try { PlatformShell.Reveal((SelectedFiles().FirstOrDefault() ?? currentItem)?.Path, currentFolder); }
         catch (Exception ex) { Status.Text = $"{PlatformShell.FileManagerName}を開けません: " + ex.Message; }
+    }
+
+    static string? FolderOf(FileItem item) => Path.GetDirectoryName(item.Path);
+
+    /// <summary>画像が入っているフォルダを開き、その画像を選ぶ(サブフォルダを読み込んでいるとき、そのフォルダだけを見るため)。</summary>
+    void FileOp_GoToFolder(object? sender, RoutedEventArgs e)
+    {
+        var sel = SelectedFiles();
+        if (sel.Count != 1 || FolderOf(sel[0]) is not { } dir) return;
+        if (!Directory.Exists(dir))
+        {
+            Status.Text = "フォルダが見つかりません: " + dir;
+            return;
+        }
+        OpenFolder(dir, sel[0].Path);
     }
 
     /// <summary>クリップボードを読むのは非同期なので、メニューを開いてから「貼り付け」を使えるようにする。</summary>
