@@ -34,6 +34,8 @@ C# / Avalonia 11.3 / .NET 10。バージョンは `PromptLoupe/PromptLoupe.cspro
 | `PromptLoupe/MainWindow.axaml` / `.cs` | 画面、閲覧、絞り込み、メタデータ表示、ズーム。絞り込みと並び替えは `RefreshView` で一覧を作り直す |
 | `PromptLoupe/MainWindow.FileOps.cs` | 左パネルのファイル操作と、一覧からのドラッグ持ち出し |
 | `PromptLoupe/MainWindow.Fullscreen.cs` | 全画面表示(F11 / Esc。`WindowState.FullScreen`) |
+| `PromptLoupe/MainWindow.PathBar.cs` / `FolderPath.cs`(Core) | フォルダのパスの欄(絞り込み欄の上。2026-11-08)。パンくずのボタン(クリックで移動)と、空いたところのクリック(Ctrl+L / Alt+D、Mac は ⌘L)で入力欄に切り替え(Enter で移動、Esc・フォーカスが外れたら取り消し。見つからなければ `invalid` のクラスで枠を赤くし、`InnerRightContent` に理由。`DataValidationErrors` は下に行が増えて表示がずれるので使わない)。戻る・進むの履歴(50 件。`navigatingHistory` のあいだは積まない)、親フォルダへ(Alt+←→↑、マウスの戻る・進むボタン、Mac は ⌘[ ⌘] ⌘↑)。`OpenFolder` の最初で `OnFolderChanging` を呼び、履歴・パスの欄・ツリーを合わせる。設定 `ShowPathBar` で隠せる(全画面でも隠す)。長いパスは右端(いまのフォルダ)を見せる(`ScrollViewer.ScrollToEnd` は縦なので、`Offset` を自分で計算する) |
+| `PromptLoupe/MainWindow.FolderTree.cs` | フォルダツリー(左パネルの上。2026-11-08)。根はよく使う場所(ピクチャ・デスクトップ・ドキュメント・ダウンロード、Mac・Linux はホームも)とドライブ(Windows のドライブ名はあとから付ける。Mac・Linux は「ルート (/)」、Mac は /Volumes も)。開いたときに中のフォルダを読む(`FolderNode.Loading`。仮の子で ▸ を出す)。隠し・システム・. で始まる名前は出さない。画像の枚数は数えない(ユーザーの希望)。フォルダを開くと `SyncFolderTree` で、いちばん近い根からそのフォルダまで開いて選ぶ(`syncingTree` のあいだは開かない)。右クリックは選択を変えない(トンネルの `PointerPressed` で `Handled`、対象は `menuTarget`)。ツリーにフォーカスがあるときは、画像の切り替えとファイル操作のキーを働かせない(Delete で一覧のファイルを消さないため)。見出しで最小化、境目で高さ変更(`FolderTreeCollapsed`・`FolderTreeHeight`)。上の「サブフォルダ」はメニューと同じ `SubfolderDepth`(`SetSubfolderDepth`)。Linux の Headless で、パンくず・ツリー・履歴・手入力・右クリック・深さ・最小化・パスの欄を隠す・全画面を確認(2026-11-08) |
 | `PromptLoupe/MainWindow.Watcher.cs` / `FileChanges.cs`(Core) | 開いているフォルダの見張り(`FileSystemWatcher`)。ほかのアプリでの移動・削除・名前変更を一覧に反映する(2026-11-05。切り取ってエクスプローラーに貼り付けると、一覧に古い項目が残る不具合への対応)。ユーザーが WPF 版で、切り取り→エクスプローラーへ貼り付け、エクスプローラーでの削除・名前変更、Shift+ドラッグでの移動を確認し「問題なし」(2026-11-05)。通知は 300ms ためてから `FileChanges.Map` で読み替える。消えたはずのファイルが残っていれば何もしない(保存時に消して戻すアプリのため)。表示中でない画像が消えても、見ている画像は切り替えない。新しく増えた画像は加えない。WPF 版から移した(Linux で動作確認済み) |
 | `PromptLoupe/MainWindow.Tags.cs` / `TagDictionary.cs`(Core) | タグの色分けと、Danbooru 辞書(danbooru.csv)の読み込み |
 | `PromptLoupe/RenameWindow.axaml(.cs)` | 名前の変更ダイアログ |
@@ -74,6 +76,8 @@ C# / Avalonia 11.3 / .NET 10。バージョンは `PromptLoupe/PromptLoupe.cspro
 - 見送り: 虫眼鏡(部分拡大)、サムネイルのグリッド表示(仮想化パネルが必要)。
 
 ## 次にやること(候補)
+
+- フォルダのパスの欄とフォルダツリー(2026-11-08。イメージ画像を見てユーザーが決めた形)。Windows・Mac での確認はまだ。
 
 - 1.7.0(WPF 版の最後)を 2026-11-05 にリリースした(ユーザーが公開)。2.0.0(Avalonia 版。Windows・Mac・Linux)を 2026-11-08 にリリースした(ユーザーが公開)。release.yml の 5 つのジョブ(下書き・Windows・Mac 2 種・Linux)は初回で成功した。
 - README の画面写真(`docs/images/main.png`)は WPF 版のまま(ユーザーの判断で差し替えない。2026-11-08)。

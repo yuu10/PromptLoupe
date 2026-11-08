@@ -88,6 +88,8 @@ public partial class MainWindow : Window
         FileList.ItemsSource = shown;
         ShowMeta(null, null);
         LoadSavedTagDictionary();
+        SetupPathBar();
+        SetupFolderTree();
 
         AddHandler(KeyDownEvent, Window_KeyDown, RoutingStrategies.Tunnel);
         AddHandler(DragDrop.DragOverEvent, Window_DragOver);
@@ -202,7 +204,10 @@ public partial class MainWindow : Window
     {
         scanCts?.Cancel();
         int seq = ++folderSeq;
+        try { folder = FolderPath.Normalize(folder); } catch { } // 末尾の区切り文字などをそろえる(履歴やツリーとの比較のため)
+        string? previousFolder = currentFolder;
         currentFolder = folder;
+        OnFolderChanging(previousFolder, folder); // 移動の履歴、パスの欄、フォルダツリー
         int depth = settings.SubfolderDepth;
         Status.Text = "フォルダを読み込み中…";
 
@@ -904,10 +909,17 @@ public partial class MainWindow : Window
     void SubfolderDepth_Click(object? sender, RoutedEventArgs e)
     {
         if (sender is not MenuItem mi || !int.TryParse(mi.Tag?.ToString(), out int depth)) return;
+        SetSubfolderDepth(depth);
+    }
 
+    /// <summary>サブフォルダを読み込む深さを変える(メニューと、フォルダツリーの上の選択欄から)。</summary>
+    void SetSubfolderDepth(int depth)
+    {
+        CheckOnly(SubfolderMenu, depth.ToString());
+        if (settings.SubfolderDepth == depth) return;
         settings.SubfolderDepth = depth;
         settings.Save();
-        CheckOnly(SubfolderMenu, depth.ToString());
+        SelectDepthBox();
 
         // 開いているフォルダを新しい設定で読み込み直す(表示中の画像は維持)
         if (currentFolder != null) OpenFolder(currentFolder, currentItem?.Path);
@@ -1034,9 +1046,16 @@ public partial class MainWindow : Window
             e.Handled = true;
             return;
         }
+        if (!isFullscreen && HandleNavigationKey(e)) // 戻る・進む・上へ・パスの入力
+        {
+            e.Handled = true;
+            return;
+        }
 
         var focused = FocusManager?.GetFocusedElement();
         if (focused is TextBox) return;
+        // フォルダツリーにいるときは、矢印キーなどをツリーの操作に任せる。ファイル操作のキーも、一覧のファイルに効かないようにする
+        if (focused is Visual fv && (fv == FolderTree || FolderTree.IsVisualAncestorOf(fv))) return;
         // 右パネルの文字を選んでいるときの Ctrl+C は、その文字のコピーに任せる
         if (focused is SelectableTextBlock { SelectedText.Length: > 0 } && mod == cmd && e.Key == Key.C) return;
 

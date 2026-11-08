@@ -41,7 +41,7 @@ public partial class MainWindow
         prevViewportBackground = Viewport.Background;
         isFullscreen = true;
 
-        MainMenu.IsVisible = FilterRow.IsVisible = StatusBar.IsVisible = false;
+        MainMenu.IsVisible = PathRow.IsVisible = FilterRow.IsVisible = StatusBar.IsVisible = false;
         LeftPanel.IsVisible = RightPanel.IsVisible = Split1.IsVisible = Split2.IsVisible = false;
         LeftCol.MinWidth = RightCol.MinWidth = 0;
         LeftCol.Width = RightCol.Width = SplitCol1.Width = SplitCol2.Width = new GridLength(0);
@@ -58,6 +58,7 @@ public partial class MainWindow
         WindowState = prevState == WindowState.FullScreen ? WindowState.Normal : prevState;
 
         MainMenu.IsVisible = FilterRow.IsVisible = StatusBar.IsVisible = true;
+        PathRow.IsVisible = settings.ShowPathBar;
         LeftPanel.IsVisible = RightPanel.IsVisible = Split1.IsVisible = Split2.IsVisible = true;
         LeftCol.MinWidth = prevLeftMin;
         RightCol.MinWidth = prevRightMin;
