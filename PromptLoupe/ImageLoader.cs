@@ -21,6 +21,7 @@ public static class ImageLoader
     /// <summary>画像を読み込む。maxSide を指定すると、長辺がその大きさになるように縮小する(サムネイル用)。</summary>
     public static Bitmap Load(string path, int? maxSide = null)
     {
+        path = ArchiveStore.Resolve(path); // 書庫の中の画像は、一時フォルダに書き出したファイルを読む
         string ext = Path.GetExtension(path).ToLowerInvariant();
         if (ext is ".tif" or ".tiff" or ".heic" or ".heif")
         {

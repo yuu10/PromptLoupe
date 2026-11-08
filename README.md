@@ -40,6 +40,9 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
   - PNG・JPEG・WebP・BMP・GIF は SkiaSharp、TIFF は LibTiff.Net で読む(どの OS でも。WebP も拡張機能なしで表示できる)
   - HEIC は OS の機能で読む: Windows は WIC(「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」が必要)、Mac は ImageIO、Linux はその PC の libheif と HEVC のプラグイン。HEVC のデコーダーは LGPL などで exe に入れられないため、同梱していない
   - 前後の画像を先読みしておき、送ったときにすぐ表示する
+- 書庫(zip・rar・7z。cbz・cbr・cb7 も)の中の画像を、展開せずに閲覧。書庫はフォルダと同じように開く(ドロップ・「ファイル → 画像・書庫を開く」・フォルダツリー・パスの欄)。書庫の中のフォルダは `フォルダ名/` を色分けして表示。中の書庫は開かない。フォルダを開いたときに、中の書庫の画像は含めない
+  - SharpCompress で読み、表示する画像は一時フォルダに取り出す(別のフォルダを開くか、終了すると消す)。ソリッド形式の rar・7z は、開いたときに先頭から順に取り出す(後ろのほうの画像は待つことがある)
+  - 書庫の中の画像は、名前の変更・削除・ファイルのコピーなどはできない。パスワード付きの書庫は非対応
 - 撮影情報(Exif): JPEG・WebP・HEIC の EXIF から、カメラ・レンズ・撮影日時・絞り・シャッター速度・ISO 感度・焦点距離・露出補正・撮影モード・フラッシュ・ホワイトバランスを右パネルに表示
   - GPS の位置情報は、初期設定では「記録あり」とだけ表示。メニュー「設定 → 撮影情報の位置情報(GPS)を表示する」で緯度・経度・標高を表示
 - フォルダ内閲覧(←→ / PageUp・PageDown / Home・End)、ドラッグ&ドロップ、コマンドライン引数、「このアプリで開く」に対応
@@ -168,6 +171,7 @@ main と `claude/` のブランチへのプッシュ、PR のたびに、GitHub 
 - `NaturalComparer.cs` — 自然順(img2 が img10 より前)の比較
 - `FileChanges.cs` — ほかのアプリでの移動・削除・名前変更の通知を、一覧の変更に読み替える
 - `FolderPath.cs` — パスの分割(パンくず)・比較・手入力の解釈
+- `ArchivePath.cs` / `ArchiveStore.cs` — 書庫の中の画像のパス(`書庫|中の名前`)と、書庫の読み込み・一時フォルダへの取り出し(SharpCompress)
 - `AppSettings.cs` — 設定の保存
 - `TagDictionary.cs` — タグ辞書の読み込み
 
@@ -181,7 +185,7 @@ PromptLoupe は [MIT License](LICENSE) で配布しています(Copyright (c) 20
 
 ### 使用ライブラリ
 
-Avalonia(MIT)・SkiaSharp・HarfBuzzSharp(MIT)・MicroCom.Runtime(MIT)・Tmds.DBus.Protocol(MIT)・ANGLE(BSD 3-Clause)・LibTiff.Net(BSD 3-Clause)と、SkiaSharp に含まれる Skia などのライブラリを使っています。ライセンス文は [PromptLoupe/THIRD-PARTY-NOTICES.txt](PromptLoupe/THIRD-PARTY-NOTICES.txt) にあり、`LICENSE` とともに exe に埋め込んで、アプリの「ヘルプ → ライセンス」で表示します。
+Avalonia(MIT)・SkiaSharp・HarfBuzzSharp(MIT)・MicroCom.Runtime(MIT)・Tmds.DBus.Protocol(MIT)・ANGLE(BSD 3-Clause)・LibTiff.Net(BSD 3-Clause)・SharpCompress(MIT。RAR の展開部分は UnRAR のライセンスに従う)と、SkiaSharp に含まれる Skia などのライブラリを使っています。ライセンス文は [PromptLoupe/THIRD-PARTY-NOTICES.txt](PromptLoupe/THIRD-PARTY-NOTICES.txt) にあり、`LICENSE` とともに exe に埋め込んで、アプリの「ヘルプ → ライセンス」で表示します。
 
 ## 既知の制限
 

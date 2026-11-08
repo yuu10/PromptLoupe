@@ -26,6 +26,10 @@ public partial class MainWindow
         Geometry.Parse("M1,3 Q1,2 2,2 L6,2 L7.5,3.5 L14,3.5 Q15,3.5 15,4.5 L15,12 Q15,13 14,13 L2,13 Q1,13 1,12 Z");
     static readonly Geometry DriveIcon =
         Geometry.Parse("M1,6 L15,6 L15,12 Q15,13 14,13 L2,13 Q1,13 1,12 Z M2,4 L14,4 L15,6 L1,6 Z");
+    // 書庫: 箱にジッパーの穴(F0 = 偶奇の塗りで、重なった四角を穴にする)
+    static readonly Geometry ArchiveIcon =
+        Geometry.Parse("F0 M2,1 H14 V15 H2 Z M7,2 H9 V3.5 H7 Z M7,5 H9 V6.5 H7 Z M7,8 H9 V9.5 H7 Z M6.5,10.5 H9.5 V13 H6.5 Z");
+    static readonly IBrush ArchiveBrush = new SolidColorBrush(Color.Parse("#C9935E"));
     static readonly IBrush FolderBrush = new SolidColorBrush(Color.Parse("#E7B54A"));
     static readonly IBrush DriveBrush = new SolidColorBrush(Color.Parse("#9AA4B0"));
 
@@ -142,10 +146,11 @@ public partial class MainWindow
 
     TreeViewItem CreateNode(string name, string path, bool drive, bool hasChildren)
     {
+        bool archive = !drive && ArchivePath.HasArchiveExtension(path);
         var icon = new ShapePath
         {
-            Data = drive ? DriveIcon : FolderIcon,
-            Fill = drive ? DriveBrush : FolderBrush,
+            Data = drive ? DriveIcon : archive ? ArchiveIcon : FolderIcon,
+            Fill = drive ? DriveBrush : archive ? ArchiveBrush : FolderBrush,
             Width = 16, Height = 14, Stretch = Stretch.Uniform,
             Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center,
         };
@@ -156,8 +161,8 @@ public partial class MainWindow
         var item = new TreeViewItem { Header = header, Tag = new FolderNode { Path = path } };
         ToolTip.SetTip(item, path);
         if (drive) item.Classes.Add("drive");
-        // 中にフォルダがあるときは、開く印(▸)を出すために仮の項目を入れておく。開いたときに読み込む
-        if (hasChildren) item.Items.Add(new TreeViewItem { Header = "読み込み中…", IsEnabled = false });
+        // 中にフォルダがあるときは、開く印(▸)を出すために仮の項目を入れておく。開いたときに読み込む(書庫は中を出さない)
+        if (hasChildren && !archive) item.Items.Add(new TreeViewItem { Header = "読み込み中…", IsEnabled = false });
         item.PropertyChanged += (_, e) =>
         {
             if (e.Property == TreeViewItem.IsExpandedProperty && item.IsExpanded) _ = LoadChildrenAsync(item);
@@ -185,36 +190,52 @@ public partial class MainWindow
             item.Items.Add(CreateNode(name, path, drive: false, hasChildren));
     }
 
-    /// <summary>フォルダの中の(隠しでない)フォルダを、自然順で返す。probe なら、それぞれの中にフォルダがあるかも調べる。</summary>
+    /// <summary>
+    /// フォルダの中の(隠しでない)フォルダと書庫を返す(フォルダが先、それぞれ自然順)。
+    /// probe なら、それぞれのフォルダの中にフォルダか書庫があるかも調べる。
+    /// </summary>
     static List<(string Name, string Path, bool HasChildren)> ListSubfolders(string dir, bool probe)
     {
-        var opt = new EnumerationOptions
-        {
-            IgnoreInaccessible = true,
-            AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
-        };
-        var list = new List<(string, string, bool)>();
+        var opt = TreeEnumerationOptions;
+        var folders = new List<(string, string, bool)>();
+        var archives = new List<(string, string, bool)>();
         try
         {
             foreach (var d in Directory.EnumerateDirectories(dir, "*", opt))
             {
                 string name = System.IO.Path.GetFileName(d);
                 if (!OperatingSystem.IsWindows() && name.StartsWith('.')) continue;
-                bool has = !probe || HasSubfolder(d, opt);
-                list.Add((name, d, has));
+                bool has = !probe || HasSubfolder(d);
+                folders.Add((name, d, has));
+            }
+            foreach (var f in Directory.EnumerateFiles(dir, "*", opt))
+            {
+                string name = System.IO.Path.GetFileName(f);
+                if (!OperatingSystem.IsWindows() && name.StartsWith('.')) continue;
+                if (ArchivePath.HasArchiveExtension(f)) archives.Add((name, f, false));
             }
         }
         catch { }
-        list.Sort((a, b) => NaturalComparer.Instance.Compare(a.Item1, b.Item1));
-        return list;
+        folders.Sort((a, b) => NaturalComparer.Instance.Compare(a.Item1, b.Item1));
+        archives.Sort((a, b) => NaturalComparer.Instance.Compare(a.Item1, b.Item1));
+        folders.AddRange(archives);
+        return folders;
     }
 
-    static bool HasSubfolder(string dir, EnumerationOptions opt)
+    static readonly EnumerationOptions TreeEnumerationOptions = new()
     {
+        IgnoreInaccessible = true,
+        AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
+    };
+
+    /// <summary>中に(隠しでない)フォルダか書庫があるか。</summary>
+    static bool HasSubfolder(string dir)
+    {
+        static bool Visible(string p) => OperatingSystem.IsWindows() || !System.IO.Path.GetFileName(p).StartsWith('.');
         try
         {
-            return Directory.EnumerateDirectories(dir, "*", opt)
-                .Any(d => OperatingSystem.IsWindows() || !System.IO.Path.GetFileName(d).StartsWith('.'));
+            return Directory.EnumerateDirectories(dir, "*", TreeEnumerationOptions).Any(Visible)
+                || Directory.EnumerateFiles(dir, "*", TreeEnumerationOptions).Any(f => Visible(f) && ArchivePath.HasArchiveExtension(f));
         }
         catch { return false; }
     }
@@ -330,7 +351,8 @@ public partial class MainWindow
     void FolderTree_Reveal(object? sender, RoutedEventArgs e)
     {
         if (MenuNode is not { } node) return;
-        try { PlatformShell.Reveal(null, node.Path); }
+        // 書庫は、書庫のファイルを選んだ状態で開く
+        try { PlatformShell.Reveal(File.Exists(node.Path) ? node.Path : null, node.Path); }
         catch (Exception ex) { Status.Text = "開けませんでした: " + ex.Message; }
     }
 

@@ -24,6 +24,7 @@ public static class MetadataReader
         var meta = new ImageMetadata();
         try
         {
+            path = ArchiveStore.Resolve(path); // 書庫の中の画像は、書き出したファイルを読む
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
             meta.Raw = ReadRaw(fs, path, meta);
             Interpret(meta);
@@ -40,6 +41,7 @@ public static class MetadataReader
     {
         try
         {
+            path = ArchiveStore.Resolve(path);
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             var meta = new ImageMetadata();
             ReadRaw(fs, path, meta);

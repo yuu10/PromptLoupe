@@ -91,7 +91,7 @@ public partial class MainWindow
     void NavigateTo(string folder)
     {
         if (currentFolder != null && FolderPath.Equal(currentFolder, folder, FolderPath.Comparison)) return;
-        if (!Directory.Exists(folder))
+        if (!CanOpenFolder(folder))
         {
             Status.Text = "フォルダが見つかりません: " + folder;
             return;
@@ -115,7 +115,7 @@ public partial class MainWindow
         {
             string target = from[^1];
             from.RemoveAt(from.Count - 1);
-            if (!Directory.Exists(target)) continue;
+            if (!CanOpenFolder(target)) continue;
 
             if (currentFolder != null) to.Add(currentFolder);
             navigatingHistory = true;
@@ -234,7 +234,7 @@ public partial class MainWindow
 
         try
         {
-            if (Directory.Exists(path))
+            if (CanOpenFolder(path))
             {
                 EndPathEdit();
                 FileList.Focus();
@@ -242,9 +242,9 @@ public partial class MainWindow
                     OpenFolder(FolderPath.Normalize(path), null);
                 return;
             }
-            if (File.Exists(path))
+            if (File.Exists(path) || ArchivePath.IsEntry(path))
             {
-                // 画像のパスなら、そのフォルダを開いて、その画像を選ぶ
+                // 画像のパスなら、そのフォルダ(書庫の中の画像なら書庫)を開いて、その画像を選ぶ
                 EndPathEdit();
                 FileList.Focus();
                 OpenPath(path);

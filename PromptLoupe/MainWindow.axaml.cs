@@ -104,6 +104,9 @@ public partial class MainWindow : Window
         Viewport.PointerReleased += Viewport_PointerReleased;
         Viewport.SizeChanged += (_, _) => UpdateZoomText();
 
+        Task.Run(ArchiveStore.CleanupStale); // 前回までに残った、書庫の一時ファイル
+        Closed += (_, _) => ArchiveStore.CloseAll(wait: true);
+
         initializing = false;
         Opened += (_, _) =>
         {
@@ -200,8 +203,16 @@ public partial class MainWindow : Window
     void OpenPath(string path)
     {
         if (Directory.Exists(path)) OpenFolder(path, null);
+        else if (ArchivePath.IsArchiveFile(path)) OpenFolder(path, null); // 書庫はフォルダと同じように開く
+        else if (ArchivePath.TrySplit(path, out var archive, out _)) OpenFolder(archive, path); // 書庫の中の画像
         else if (File.Exists(path)) OpenFolder(Path.GetDirectoryName(Path.GetFullPath(path))!, Path.GetFullPath(path));
     }
+
+    /// <summary>開けるフォルダか書庫か。</summary>
+    static bool CanOpenFolder(string path) => Directory.Exists(path) || ArchivePath.IsArchiveFile(path);
+
+    /// <summary>いま開いているのが書庫か。</summary>
+    bool currentIsArchive;
 
     async void OpenFolder(string folder, string? select)
     {
@@ -210,35 +221,55 @@ public partial class MainWindow : Window
         try { folder = FolderPath.Normalize(folder); } catch { } // 末尾の区切り文字などをそろえる(履歴やツリーとの比較のため)
         string? previousFolder = currentFolder;
         currentFolder = folder;
+        bool isArchive = currentIsArchive = ArchivePath.IsArchiveFile(folder);
         OnFolderChanging(previousFolder, folder); // 移動の履歴、パスの欄、フォルダツリー
         int depth = settings.SubfolderDepth;
-        Status.Text = "フォルダを読み込み中…";
+        Status.Text = isArchive ? "書庫を読み込み中…" : "フォルダを読み込み中…";
 
         List<FileItem> files;
+        ArchiveListing? listing = null;
         try
         {
-            files = await Task.Run(() =>
-                EnumerateImages(folder, depth)
-                    .Select(p => new FileItem(p, folder))
-                    .ToList());
+            if (isArchive)
+            {
+                // 書庫の中は、サブフォルダの深さに関係なく、すべての画像を出す(中の書庫は開かない)
+                listing = await Task.Run(() => ArchiveStore.Open(folder, IsImage));
+                files = listing.Images.Select(e => new FileItem(folder, e)).ToList();
+            }
+            else
+            {
+                ArchiveStore.CloseAll(); // 前に開いていた書庫の一時ファイルを消す
+                files = await Task.Run(() =>
+                    EnumerateImages(folder, depth)
+                        .Select(p => new FileItem(p, folder))
+                        .ToList());
+            }
         }
         catch (Exception ex)
         {
-            if (seq == folderSeq) Status.Text = "フォルダを開けません: " + ex.Message;
+            if (seq == folderSeq)
+            {
+                SetItems(new List<FileItem>());
+                ClearImage();
+                Status.Text = (isArchive ? "書庫を開けません: " : "フォルダを開けません: ") + ex.Message;
+            }
             return;
         }
         if (seq != folderSeq) return; // 別のフォルダが開かれた
 
         SetItems(files);
-        StartWatcher(folder, depth); // ほかのアプリでの移動・削除・名前変更を、一覧に反映する
+        if (isArchive) StopWatcher();
+        else StartWatcher(folder, depth); // ほかのアプリでの移動・削除・名前変更を、一覧に反映する
 
-        Title = $"PromptLoupe - {folder}" + depth switch
+        Title = $"PromptLoupe - {folder}" + (isArchive ? "" : depth switch
         {
             0 => "",
             < 0 => "(サブフォルダ: 無制限)",
             _ => $"(サブフォルダ: {depth}階層まで)"
-        };
-        Status.Text = $"{files.Count} 枚の画像";
+        });
+        Status.Text = $"{files.Count} 枚の画像" + (listing == null ? "" :
+            (listing.Encrypted > 0 ? $"(パスワード付きで表示できない画像: {listing.Encrypted} 枚)" : "") +
+            (listing.Archives > 0 ? $"(中の書庫 {listing.Archives} 個は開きません)" : ""));
 
         if (files.Count == 0)
         {
@@ -487,7 +518,9 @@ public partial class MainWindow : Window
     {
         FileInfoText.Text = item == null
             ? ""
-            : $"{item.Name}\n{item.Modified:yyyy/MM/dd HH:mm:ss}  ・  {item.Size / 1024.0:N0} KB";
+            : $"{item.Name}\n{item.Modified:yyyy/MM/dd HH:mm:ss}  ・  {item.Size / 1024.0:N0} KB" +
+              (item.InArchive && ArchivePath.TrySplit(item.Path, out var archive, out _, mustExist: false)
+                  ? $"\n書庫: {Path.GetFileName(archive)}" : "");
 
         if (m == null)
         {
@@ -878,10 +911,10 @@ public partial class MainWindow : Window
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("画像ファイル")
+                new FilePickerFileType("画像ファイル・書庫")
                 {
-                    Patterns = ImageExts.Select(x => "*" + x).ToArray(),
-                    AppleUniformTypeIdentifiers = new[] { "public.image" },
+                    Patterns = ImageExts.Concat(new[] { ".zip", ".cbz", ".rar", ".cbr", ".7z", ".cb7" }).Select(x => "*" + x).ToArray(),
+                    AppleUniformTypeIdentifiers = new[] { "public.image", "public.archive" },
                     MimeTypes = new[] { "image/*" },
                 },
                 FilePickerFileTypes.All,
@@ -1018,7 +1051,7 @@ public partial class MainWindow : Window
         await MessageDialog.Show(this,
             $"PromptLoupe\nバージョン {version}\n{copyright}(MIT License)\n\n" +
             "AI生成画像のメタデータを元に、並び替え・絞り込みして閲覧できる画像ビューア\n\n" +
-            $"使用ライブラリ: Avalonia {avalonia}、SkiaSharp(どちらも MIT License)、LibTiff.Net(BSD License)など\n" +
+            $"使用ライブラリ: Avalonia {avalonia}、SkiaSharp(どちらも MIT License)、LibTiff.Net(BSD License)、SharpCompress(MIT License)など\n" +
             "ライセンス文は、メニューの「ヘルプ → ライセンス」で読めます。\n\n" +
             $"{RuntimeInformation.FrameworkDescription}  ・  {RuntimeInformation.OSDescription}",
             "バージョン情報");

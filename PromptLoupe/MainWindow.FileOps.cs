@@ -21,31 +21,38 @@ public partial class MainWindow
         var sel = SelectedFiles();
         int n = sel.Count;
 
-        FmOpen.IsEnabled = n == 1;
+        // 書庫の中の画像は、ファイルとしての操作(開く・コピー・名前の変更・削除・プロパティなど)はできない
+        bool archive = currentIsArchive;
+        FmOpen.IsEnabled = n == 1 && !archive;
         FmReveal.IsEnabled = n > 0 || currentFolder != null;
-        FmGoToFolder.IsEnabled = n == 1 && FolderOf(sel[0]) is { } dir
+        FmGoToFolder.IsEnabled = !archive && n == 1 && FolderOf(sel[0]) is { } dir
                                  && (currentFolder == null || !FolderPath.Equal(dir, currentFolder, FolderPath.Comparison));
-        FmCut.IsEnabled = FmCopy.IsEnabled = FmCopyPath.IsEnabled = n > 0;
-        FmRename.IsEnabled = n == 1;
-        FmCopyImage.IsEnabled = FmProps.IsEnabled = n == 1;
+        FmCut.IsEnabled = FmCopy.IsEnabled = n > 0 && !archive;
+        FmCopyPath.IsEnabled = n > 0;
+        FmRename.IsEnabled = n == 1 && !archive;
+        FmCopyImage.IsEnabled = n == 1;
+        FmProps.IsEnabled = n == 1 && !archive;
         FmCopyPrompt.IsEnabled = n == 1 && !string.IsNullOrWhiteSpace(sel[0].Meta?.Prompt);
         UpdatePasteEnabled();
 
-        FmDelete.IsEnabled = n > 0 && settings.AllowDelete;
+        FmDelete.IsEnabled = n > 0 && settings.AllowDelete && !archive;
         FmDelete.Header = settings.AllowDelete ? "削除(ごみ箱へ)(_D)" : "削除(設定で許可すると使えます)";
     }
 
     void FileOp_OpenDefault(object? sender, RoutedEventArgs e)
     {
         var item = SelectedFiles().FirstOrDefault();
-        if (item == null) return;
+        if (item == null || item.InArchive) return;
         try { PlatformShell.OpenWithDefaultApp(item.Path); }
         catch (Exception ex) { Status.Text = "開けません: " + ex.Message; }
     }
 
     void FileOp_Reveal(object? sender, RoutedEventArgs e)
     {
-        try { PlatformShell.Reveal((SelectedFiles().FirstOrDefault() ?? currentItem)?.Path, currentFolder); }
+        // 書庫の中の画像なら、書庫のファイルを選んだ状態で開く
+        string? file = currentIsArchive ? currentFolder : (SelectedFiles().FirstOrDefault() ?? currentItem)?.Path;
+        string? folder = currentIsArchive && currentFolder != null ? Path.GetDirectoryName(currentFolder) : currentFolder;
+        try { PlatformShell.Reveal(file, folder); }
         catch (Exception ex) { Status.Text = $"{PlatformShell.FileManagerName}を開けません: " + ex.Message; }
     }
 
@@ -68,7 +75,7 @@ public partial class MainWindow
     async void UpdatePasteEnabled()
     {
         FmPaste.IsEnabled = false;
-        if (currentFolder == null || Clipboard == null) return;
+        if (currentFolder == null || currentIsArchive || Clipboard == null) return;
         FmPaste.IsEnabled = await FileClipboard.HasFilesAsync(Clipboard);
     }
 
@@ -87,6 +94,11 @@ public partial class MainWindow
     /// <summary>選択したファイルをクリップボードに入れる。ファイルマネージャーでそのまま貼り付けられる。</summary>
     async void CopyFiles(bool cut)
     {
+        if (currentIsArchive)
+        {
+            Status.Text = "書庫の中の画像は、ファイルとしてコピーできません(「画像をコピー」は使えます)";
+            return;
+        }
         var paths = SelectedFiles().Select(f => f.Path).Where(File.Exists).ToArray();
         if (paths.Length == 0 || Clipboard == null) return;
 
@@ -107,6 +119,11 @@ public partial class MainWindow
     async void PasteFiles()
     {
         if (currentFolder == null || Clipboard == null) return;
+        if (currentIsArchive)
+        {
+            Status.Text = "書庫の中には貼り付けられません";
+            return;
+        }
 
         List<string> list;
         bool move;
@@ -212,7 +229,7 @@ public partial class MainWindow
     {
         if (!OperatingSystem.IsWindows()) return;
         var item = SelectedFiles().FirstOrDefault();
-        if (item == null) return;
+        if (item == null || item.InArchive) return;
         if (!PlatformShell.ShowProperties(item.Path)) Status.Text = "プロパティを開けませんでした";
     }
 
@@ -223,6 +240,7 @@ public partial class MainWindow
         var sel = SelectedFiles();
         if (sel.Count != 1 || currentFolder == null) return;
         var item = sel[0];
+        if (item.InArchive) { Status.Text = "書庫の中の画像は、名前を変えられません"; return; }
         if (!File.Exists(item.Path)) { Status.Text = "ファイルが見つかりません"; return; }
 
         string dir = Path.GetDirectoryName(item.Path)!;
@@ -267,6 +285,11 @@ public partial class MainWindow
 
         var sel = SelectedFiles();
         if (sel.Count == 0) return;
+        if (sel.Any(f => f.InArchive))
+        {
+            Status.Text = "書庫の中の画像は、削除できません";
+            return;
+        }
 
         if (settings.ConfirmDelete)
         {
