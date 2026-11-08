@@ -532,7 +532,7 @@ public partial class MainWindow : Window
         FileInfoText.Text = item == null
             ? ""
             : $"{item.Name}\n{item.Modified:yyyy/MM/dd HH:mm:ss}  ・  {item.Size / 1024.0:N0} KB" +
-              (item.InArchive && ArchivePath.TrySplit(item.Path, out var archive, out _, mustExist: false)
+              (item.InArchive && ArchivePath.TrySplit(item.Path, out var archive, out _)
                   ? $"\n書庫: {Path.GetFileName(archive)}" : "");
 
         if (m == null)

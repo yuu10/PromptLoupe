@@ -77,12 +77,16 @@ public static class ArchiveStore
     /// </summary>
     public static string Resolve(string path)
     {
-        if (!ArchivePath.TrySplit(path, out var archive, out var entry, mustExist: false)) return path;
+        if (path.IndexOf(ArchivePath.Separator) < 0) return path;
         Session? s;
         lock (gate) s = current;
-        if (s == null || !string.Equals(s.Archive, archive, FolderPath.Comparison))
+        // 開いている書庫の中か(拡張子のない書庫もあるので、拡張子ではなく、開いている書庫のパスで見分ける)
+        if (s != null && path.Length > s.Archive.Length + 1 && path[s.Archive.Length] == ArchivePath.Separator
+            && path.StartsWith(s.Archive, FolderPath.Comparison))
+            return s.Resolve(ArchivePath.NormalizeEntry(path[(s.Archive.Length + 1)..]));
+        if (ArchivePath.TrySplit(path, out _, out _, mustExist: false) || ArchivePath.TrySplit(path, out _, out _))
             throw new FileNotFoundException("書庫を開いていません", path);
-        return s.Resolve(ArchivePath.NormalizeEntry(entry));
+        return path; // 「|」を含むふつうのファイル名(Mac・Linux)
     }
 
     /// <summary>前回までに残った一時フォルダ(動いていないプロセスのもの)を消す。起動時に裏で呼ぶ。</summary>

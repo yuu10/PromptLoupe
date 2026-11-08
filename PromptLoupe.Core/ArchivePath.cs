@@ -24,8 +24,45 @@ public static class ArchivePath
         return false;
     }
 
-    /// <summary>実在する書庫のファイルか。</summary>
-    public static bool IsArchiveFile(string path) => HasArchiveExtension(path) && File.Exists(path);
+    /// <summary>
+    /// 実在する書庫のファイルか。拡張子が書庫のものなら書庫とみなす。
+    /// 拡張子がないか、拡張子に英数字以外が入っているとき(文字化けで「.zip」の「.」が壊れたファイルなど)は、
+    /// ファイルの先頭の数バイト(zip・rar・7z の印)を見て判断する。
+    /// </summary>
+    public static bool IsArchiveFile(string path)
+    {
+        if (HasArchiveExtension(path)) return File.Exists(path);
+        return MaySniff(path) && HasArchiveSignature(path);
+    }
+
+    /// <summary>中身を見て判断する対象か(拡張子がない、または拡張子が英数字だけでない)。</summary>
+    static bool MaySniff(string path)
+    {
+        string ext = Path.GetExtension(path);
+        if (ext.Length <= 1) return true;
+        for (int i = 1; i < ext.Length; i++)
+            if (!char.IsAsciiLetterOrDigit(ext[i])) return true;
+        return false;
+    }
+
+    /// <summary>ファイルの先頭が zip・rar・7z の印か。読めなければ false。</summary>
+    public static bool HasArchiveSignature(string path)
+    {
+        try
+        {
+            Span<byte> b = stackalloc byte[8];
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 1);
+            int n = fs.ReadAtLeast(b, b.Length, throwOnEndOfStream: false);
+            return IsArchiveSignature(b[..n]);
+        }
+        catch { return false; }
+    }
+
+    /// <summary>先頭のバイト列が zip(PK\x03\x04・空の zip は PK\x05\x06)・rar(Rar!\x1A\x07)・7z(7z\xBC\xAF\x27\x1C)の印か。</summary>
+    public static bool IsArchiveSignature(ReadOnlySpan<byte> b) =>
+        (b.Length >= 4 && b[0] == 'P' && b[1] == 'K' && ((b[2] == 3 && b[3] == 4) || (b[2] == 5 && b[3] == 6)))
+        || (b.Length >= 6 && b[..6].SequenceEqual("Rar!\x1A\x07"u8))
+        || (b.Length >= 6 && b[..6].SequenceEqual(new byte[] { (byte)'7', (byte)'z', 0xBC, 0xAF, 0x27, 0x1C }));
 
     /// <summary>書庫の中の画像のパスを作る。</summary>
     public static string Combine(string archive, string entry) => archive + Separator + NormalizeEntry(entry);
@@ -44,7 +81,7 @@ public static class ArchivePath
         while (i > 0)
         {
             string a = path[..i];
-            if (HasArchiveExtension(a) && (!mustExist || File.Exists(a)))
+            if (mustExist ? IsArchiveFile(a) : HasArchiveExtension(a))
             {
                 archive = a;
                 entry = path[(i + 1)..];

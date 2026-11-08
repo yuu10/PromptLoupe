@@ -79,6 +79,51 @@ public class ArchiveTests
     }
 
     [Fact]
+    public void ArchiveWithBrokenExtension_IsDetectedByContent()
+    {
+        // 文字化けで「.zip」の「.」が壊れた名前(拡張子なし)・拡張子に英数字以外が入った名前でも、中身で書庫と分かる
+        string zip = MakeZip(null, ("a.png", new byte[] { 1, 2 }));
+        string dir = Path.Combine(Path.GetTempPath(), "pl-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            string noExt = Path.Combine(dir, "譎ｮ驕・zip");
+            string oddExt = Path.Combine(dir, "x.ｚｉｐ");
+            string text = Path.Combine(dir, "readme");
+            File.Copy(zip, noExt);
+            File.Copy(zip, oddExt);
+            File.WriteAllText(text, "hello");
+            Assert.True(ArchivePath.IsArchiveFile(noExt));
+            Assert.True(ArchivePath.IsArchiveFile(oddExt));
+            Assert.False(ArchivePath.IsArchiveFile(text));
+            Assert.False(ArchivePath.IsArchiveFile(Path.Combine(dir, "none")));
+
+            var list = ArchiveStore.Open(noExt, IsImage);
+            Assert.Single(list.Images);
+            string p = ArchivePath.Combine(noExt, "a.png");
+            Assert.True(ArchivePath.TrySplit(p, out var a, out _));
+            Assert.Equal(noExt, a);
+            Assert.Equal(new byte[] { 1, 2 }, File.ReadAllBytes(ArchiveStore.Resolve(p)));
+        }
+        finally
+        {
+            ArchiveStore.CloseAll();
+            File.Delete(zip);
+            Directory.Delete(dir, true);
+        }
+    }
+
+    [Fact]
+    public void Signatures()
+    {
+        Assert.True(ArchivePath.IsArchiveSignature("PK\x03\x04...."u8));
+        Assert.True(ArchivePath.IsArchiveSignature("Rar!\x1A\x07\x01\x00"u8));
+        Assert.True(ArchivePath.IsArchiveSignature(new byte[] { (byte)'7', (byte)'z', 0xBC, 0xAF, 0x27, 0x1C, 0, 4 }));
+        Assert.False(ArchivePath.IsArchiveSignature("\x89PNG\r\n\x1A\n"u8));
+        Assert.False(ArchivePath.IsArchiveSignature("PK"u8));
+    }
+
+    [Fact]
     public void DecodeName_Utf8OrShiftJis()
     {
         var utf8 = Encoding.UTF8.GetBytes("人物/a.png");

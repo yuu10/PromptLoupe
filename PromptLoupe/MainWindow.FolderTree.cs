@@ -144,9 +144,10 @@ public partial class MainWindow
 
     // ───── 項目 ─────
 
-    TreeViewItem CreateNode(string name, string path, bool drive, bool hasChildren)
+    TreeViewItem CreateNode(string name, string path, bool drive, bool hasChildren, bool? isArchive = null)
     {
-        bool archive = !drive && ArchivePath.HasArchiveExtension(path);
+        // ツリーに出すファイルは書庫だけ(拡張子が壊れた書庫もあるので、拡張子ではなくファイルかどうかで見る)
+        bool archive = !drive && (isArchive ?? (ArchivePath.HasArchiveExtension(path) || File.Exists(path)));
         var icon = new ShapePath
         {
             Data = drive ? DriveIcon : archive ? ArchiveIcon : FolderIcon,
@@ -212,7 +213,7 @@ public partial class MainWindow
             {
                 string name = System.IO.Path.GetFileName(f);
                 if (!OperatingSystem.IsWindows() && name.StartsWith('.')) continue;
-                if (ArchivePath.HasArchiveExtension(f)) archives.Add((name, f, false));
+                if (ArchivePath.IsArchiveFile(f)) archives.Add((name, f, false)); // 拡張子が壊れた書庫は中身で判断
             }
         }
         catch { }
@@ -235,7 +236,7 @@ public partial class MainWindow
         try
         {
             return Directory.EnumerateDirectories(dir, "*", TreeEnumerationOptions).Any(Visible)
-                || Directory.EnumerateFiles(dir, "*", TreeEnumerationOptions).Any(f => Visible(f) && ArchivePath.HasArchiveExtension(f));
+                || Directory.EnumerateFiles(dir, "*", TreeEnumerationOptions).Any(f => Visible(f) && ArchivePath.IsArchiveFile(f));
         }
         catch { return false; }
     }
