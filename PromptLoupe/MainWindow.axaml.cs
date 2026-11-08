@@ -214,6 +214,17 @@ public partial class MainWindow : Window
     /// <summary>いま開いているのが書庫か。</summary>
     bool currentIsArchive;
 
+    /// <summary>ステータスバーの件数のあとに添える注意(書庫のパスワード付きの画像・中の書庫の数)。</summary>
+    string folderNote = "";
+
+    /// <summary>書庫を開けなかったときの説明(SharpCompress の英語のメッセージを、分かるものだけ日本語にする)。</summary>
+    static string ArchiveError(Exception ex) =>
+        ex is System.Security.Cryptography.CryptographicException
+        || ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("encrypted", StringComparison.OrdinalIgnoreCase)
+            ? "パスワード付きの書庫には対応していません"
+            : ex.Message;
+
     async void OpenFolder(string folder, string? select)
     {
         scanCts?.Cancel();
@@ -222,6 +233,7 @@ public partial class MainWindow : Window
         string? previousFolder = currentFolder;
         currentFolder = folder;
         bool isArchive = currentIsArchive = ArchivePath.IsArchiveFile(folder);
+        folderNote = "";
         OnFolderChanging(previousFolder, folder); // 移動の履歴、パスの欄、フォルダツリー
         int depth = settings.SubfolderDepth;
         Status.Text = isArchive ? "書庫を読み込み中…" : "フォルダを読み込み中…";
@@ -251,7 +263,7 @@ public partial class MainWindow : Window
             {
                 SetItems(new List<FileItem>());
                 ClearImage();
-                Status.Text = (isArchive ? "書庫を開けません: " : "フォルダを開けません: ") + ex.Message;
+                Status.Text = isArchive ? "書庫を開けません: " + ArchiveError(ex) : "フォルダを開けません: " + ex.Message;
             }
             return;
         }
@@ -267,9 +279,10 @@ public partial class MainWindow : Window
             < 0 => "(サブフォルダ: 無制限)",
             _ => $"(サブフォルダ: {depth}階層まで)"
         });
-        Status.Text = $"{files.Count} 枚の画像" + (listing == null ? "" :
-            (listing.Encrypted > 0 ? $"(パスワード付きで表示できない画像: {listing.Encrypted} 枚)" : "") +
-            (listing.Archives > 0 ? $"(中の書庫 {listing.Archives} 個は開きません)" : ""));
+        if (listing != null)
+            folderNote = (listing.Encrypted > 0 ? $"(パスワード付きで表示できない画像: {listing.Encrypted} 枚)" : "") +
+                         (listing.Archives > 0 ? $"(中の書庫 {listing.Archives} 個は開きません)" : "");
+        Status.Text = $"{files.Count} 枚の画像" + folderNote;
 
         if (files.Count == 0)
         {
@@ -334,7 +347,7 @@ public partial class MainWindow : Window
                 RefreshView();
                 NotifyTagStats();
                 int withMeta = files.Count(f => f.Meta?.HasData == true);
-                Status.Text = $"{total} 枚(うちAI生成メタデータあり: {withMeta})";
+                Status.Text = $"{total} 枚(うちAI生成メタデータあり: {withMeta})" + folderNote;
             });
         });
     }
