@@ -1,7 +1,7 @@
 # PromptLoupe(旧名 M Viewer。Claude Code 用メモ)
 
 AI生成画像のメタデータ(プロンプト・パラメーター)を元に、並び替え・絞り込みして閲覧する画像ビューア。Windows・Mac・Linux。
-C# / Avalonia 11.3 / .NET 10。バージョンは `PromptLoupe/PromptLoupe.csproj` の `<Version>`(現在 2.0.0。2026-11-08 に公開。2.0.0 で WPF 版(Windows 専用)から Avalonia 版に置き換え、Mac・Linux 向けも配布する)。1.x は WPF 版(ModernWpfUI。最後は 1.7.0。コードは v1.7.0 のタグに残っている)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
+C# / Avalonia 11.3 / .NET 10。バージョンは `PromptLoupe/PromptLoupe.csproj` の `<Version>`(現在 2.1.0。2026-11-08 にリリースの準備(タグ v2.1.0 で下書き)。フォルダのパス・フォルダツリー・書庫の閲覧などを追加。2.0.0 は 2026-11-08 に公開。2.0.0 で WPF 版(Windows 専用)から Avalonia 版に置き換え、Mac・Linux 向けも配布する)。1.x は WPF 版(ModernWpfUI。最後は 1.7.0。コードは v1.7.0 のタグに残っている)。1.5.0 で M Viewer から改名した(商標「MVIEW」(登録6320862、第9類・第42類)と紛らわしいため)。
 
 ## 進め方
 
