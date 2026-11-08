@@ -389,13 +389,11 @@
                 </StackPanel>
 
                 <!-- 表示倍率とフィット/100%(画像の右下に重ねる)。背景が暗いので、ボタンはいつもダークの見た目にする。
-                     左端の ▸ で最小化(◂ だけを残す) -->
+                     右端の ▸ で最小化(◂ だけを残す) -->
                 <ThemeVariantScope RequestedThemeVariant="Dark" HorizontalAlignment="Right" VerticalAlignment="Bottom">
                 <Border Margin="14"
                         CornerRadius="8" Background="#CC262626" Padding="6,4">
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="ViewControlsToggle" Content="▸" Classes="small" Click="ViewControls_Toggle"
-                                Padding="6,1" FontSize="15" Background="Transparent" BorderThickness="0" Foreground="#BBBBBB" />
                         <StackPanel x:Name="ViewControls" Orientation="Horizontal">
                         <TextBlock x:Name="ZoomText" Foreground="#DDDDDD" VerticalAlignment="Center"
                                    MinWidth="48" TextAlignment="Right" Margin="6,0,10,0"
@@ -409,6 +407,8 @@
                         <Button x:Name="FullscreenButton" Content="全画面" Classes="small" Click="Fullscreen_Click"
                                 Margin="4,0,0,0" ToolTip.Tip="全画面表示(F11)。Esc で戻ります" />
                         </StackPanel>
+                        <Button x:Name="ViewControlsToggle" Content="▸" Classes="small" Click="ViewControls_Toggle"
+                                Padding="6,1" Margin="2,0,0,0" FontSize="15" Background="Transparent" BorderThickness="0" Foreground="#BBBBBB" />
                     </StackPanel>
                 </Border>
                 </ThemeVariantScope>
