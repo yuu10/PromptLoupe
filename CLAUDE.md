@@ -68,7 +68,8 @@ C# / Avalonia 11.3 / .NET 10。バージョンは `PromptLoupe/PromptLoupe.cspro
   - **ほかのアプリへのドラッグは、Windows(OLE の `DoDragDrop`)と Mac だけ**。Linux(X11)にはドラッグ元の実装がなく、アプリの中だけのドラッグ(`InProcessDragSource`)になるので、Linux では一覧からの持ち出しを始めない(`CanDragOut`)。
   - 一覧の項目の選択は `ListBoxItem.OnPointerPressed`(押した時点)で変わる。複数選択のうち1枚をつかんでドラッグできるように、`FileList` にトンネルで `PointerPressed` を付け、その場合だけ `Handled` にして選択を変えない(離したときに1枚だけにする。WPF 版の `pendingSingle` と同じ)。
   - Windows の Avalonia はキーの表示名を持たず、`KeyGesture` の Enter が「Return」と表示される。そのため、プロパティのメニューには Alt+Enter を出していない(キーは効く)。
-  - Headless のクリップボードはメモリ上の仮のもの(アプリの処理は確かめられるが、OS との連携は確かめられない)。Xvfb で X11 のクリップボードを2つのプロセスで受け渡す確認も試したが、文字だけでも受け渡せなかった(この環境の問題と判断。2026-11-05)。
+  - **Windows では開いているファイルを消せない**(Linux は消せるので、CI・クラウドでは気づかない)。`ArchiveStore.CloseAll()` は書庫を閉じるのを裏で行うので、すぐあとに書庫のファイルを消すテストは `CloseAll(wait: true)` にする(ユーザーの Windows の `dotnet test` で失敗した。2026-11-08)。
+- Headless のクリップボードはメモリ上の仮のもの(アプリの処理は確かめられるが、OS との連携は確かめられない)。Xvfb で X11 のクリップボードを2つのプロセスで受け渡す確認も試したが、文字だけでも受け渡せなかった(この環境の問題と判断。2026-11-05)。
 
 ## 既知の制限・未対応
 

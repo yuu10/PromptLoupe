@@ -73,7 +73,7 @@ public class ArchiveTests
         }
         finally
         {
-            ArchiveStore.CloseAll();
+            ArchiveStore.CloseAll(wait: true); // Windows は開いているファイルを消せないので、書庫を閉じ終わるのを待つ
             File.Delete(zip);
         }
     }
@@ -107,7 +107,7 @@ public class ArchiveTests
         }
         finally
         {
-            ArchiveStore.CloseAll();
+            ArchiveStore.CloseAll(wait: true); // 同上
             File.Delete(zip);
             Directory.Delete(dir, true);
         }
