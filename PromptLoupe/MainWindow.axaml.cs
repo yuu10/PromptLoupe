@@ -90,6 +90,8 @@ public partial class MainWindow : Window
         LoadSavedTagDictionary();
         SetupPathBar();
         SetupFolderTree();
+        InfoPanelMenu.InputGesture = new KeyGesture(Key.I, CommandKey);
+        ApplyInfoPanel();
 
         AddHandler(KeyDownEvent, Window_KeyDown, RoutingStrategies.Tunnel);
         AddHandler(DragDrop.DragOverEvent, Window_DragOver);
@@ -650,14 +652,41 @@ public partial class MainWindow : Window
             BuildChips(chips, c.Prompt);
             CharactersPanel.Children.Add(chips);
 
-            if (!string.IsNullOrWhiteSpace(c.Negative))
+            bool hasNegative = !string.IsNullOrWhiteSpace(c.Negative);
+            if (hasNegative)
             {
                 CharactersPanel.Children.Add(MakeHeader("ネガティブ", c.Negative, false));
                 var negChips = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
                 BuildChips(negChips, c.Negative);
                 CharactersPanel.Children.Add(negChips);
             }
+
+            CharactersPanel.Children.Add(MakeCharacterFullText(c.Prompt, hasNegative ? c.Negative : null));
         }
+    }
+
+    /// <summary>
+    /// キャラクターの「全文を表示」(プロンプトとネガティブを1つの欄に。ネガティブの前に見出しを置いて、境目が分かるようにする)。
+    /// 最初は閉じておく。
+    /// </summary>
+    static Expander MakeCharacterFullText(string? prompt, string? negative)
+    {
+        var body = new StackPanel { Spacing = 2 };
+        if (negative != null)
+            body.Children.Add(new TextBlock { Text = "プロンプト", Classes = { "header" } });
+        body.Children.Add(new SelectableTextBlock { Text = prompt ?? "", TextWrapping = TextWrapping.Wrap });
+        if (negative != null)
+        {
+            body.Children.Add(new TextBlock { Text = "ネガティブ", Classes = { "header" }, Margin = new Thickness(0, 10, 0, 0) });
+            body.Children.Add(new SelectableTextBlock { Text = negative, TextWrapping = TextWrapping.Wrap });
+        }
+        return new Expander
+        {
+            Header = "全文を表示",
+            Margin = new Thickness(0, 6, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Content = new ScrollViewer { MaxHeight = 240, Content = body },
+        };
     }
 
     DockPanel MakeHeader(string title, string? copyText, bool bold)
@@ -1037,6 +1066,12 @@ public partial class MainWindow : Window
         if (mod == cmd && e.Key == Key.T)
         {
             ShowTagStats();
+            e.Handled = true;
+            return;
+        }
+        if (mod == cmd && e.Key == Key.I && !isFullscreen)
+        {
+            ToggleInfoPanel();
             e.Handled = true;
             return;
         }

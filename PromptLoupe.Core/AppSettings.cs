@@ -38,6 +38,9 @@ public sealed class AppSettings
     /// <summary>ファイル一覧にサムネイルを表示する。</summary>
     public bool ShowThumbnails { get; set; } = true;
 
+    /// <summary>右のパネル(プロンプト・パラメーターなどのカード)を表示する。</summary>
+    public bool ShowInfoPanel { get; set; } = true;
+
     /// <summary>絞り込み欄の上に、開いているフォルダのパス(パンくず)を表示する。</summary>
     public bool ShowPathBar { get; set; } = true;
 

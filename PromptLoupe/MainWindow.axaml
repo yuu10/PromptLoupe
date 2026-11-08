@@ -169,6 +169,8 @@
             </MenuItem>
             <MenuItem Header="表示(_V)">
                 <MenuItem Header="全画面表示(_F)" InputGesture="F11" Click="Fullscreen_Click" />
+                <MenuItem x:Name="InfoPanelMenu" Header="右のパネル(プロンプトなど)を表示(_P)" ToggleType="CheckBox"
+                          Click="InfoPanel_Click" />
                 <MenuItem x:Name="TagStatsMenu" Header="タグの集計(_T)..." Click="TagStats_Click" />
             </MenuItem>
             <MenuItem Header="設定(_S)">
@@ -398,6 +400,8 @@
                                 ToolTip.Tip="フィット表示(F)。画像を切り替えてもこの表示が続きます(選択中は太字)" />
                         <Button x:Name="ActualButton" Content="100%" Classes="small" Click="Actual_Click"
                                 ToolTip.Tip="等倍表示(1)。画像を切り替えてもこの表示が続きます(選択中は太字)" />
+                        <Button x:Name="InfoPanelButton" Content="パネルを隠す" Classes="small" Click="InfoPanel_Click"
+                                Margin="4,0,0,0" />
                         <Button x:Name="FullscreenButton" Content="全画面" Classes="small" Click="Fullscreen_Click"
                                 Margin="4,0,0,0" ToolTip.Tip="全画面表示(F11)。Esc で戻ります" />
                     </StackPanel>
