@@ -15,4 +15,9 @@
     <InternalsVisibleTo Include="PromptLoupe.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- 書庫(zip・rar・7z)の読み込み。MIT License(RAR の展開部分は UnRAR のソースから移したもの。THIRD-PARTY-NOTICES.txt を参照) -->
+    <PackageReference Include="SharpCompress" Version="1.0.0" />
+  </ItemGroup>
+
 </Project>

@@ -21,6 +21,44 @@ public partial class MainWindow
     ColumnDefinition SplitCol2 => BodyGrid.ColumnDefinitions[3];
     ColumnDefinition RightCol => BodyGrid.ColumnDefinitions[4];
 
+    // ───── 右のパネル(プロンプトなどのカード)を隠す / 出す。Ctrl+I・メニュー「表示」・画像の右下のボタン ─────
+
+    GridLength infoPanelWidth = new(390); // 隠す前の幅(出すときに戻す)
+
+    void InfoPanel_Click(object? sender, RoutedEventArgs e) => ToggleInfoPanel();
+
+    void ToggleInfoPanel()
+    {
+        settings.ShowInfoPanel = !settings.ShowInfoPanel;
+        settings.Save();
+        ApplyInfoPanel();
+    }
+
+    void ApplyInfoPanel()
+    {
+        bool show = settings.ShowInfoPanel;
+        InfoPanelMenu.IsChecked = show;
+        InfoPanelButton.Content = show ? "パネルを隠す" : "パネルを表示";
+        ToolTip.SetTip(InfoPanelButton, (show ? "右のパネル(プロンプトなど)を隠す" : "右のパネル(プロンプトなど)を表示") +
+                                        (OperatingSystem.IsMacOS() ? "(⌘I)" : "(Ctrl+I)"));
+        if (isFullscreen) return; // 全画面のあいだは、終了するときに合わせる
+
+        if (show)
+        {
+            RightCol.MinWidth = 240;
+            if (RightCol.Width.Value <= 0) RightCol.Width = infoPanelWidth;
+            SplitCol2.Width = new GridLength(6);
+        }
+        else
+        {
+            if (RightCol.Width.Value > 0) infoPanelWidth = RightCol.Width;
+            RightCol.MinWidth = 0;
+            RightCol.Width = SplitCol2.Width = new GridLength(0);
+        }
+        RightPanel.IsVisible = Split2.IsVisible = show;
+        Dispatcher.UIThread.Post(ApplyViewMode, DispatcherPriority.Loaded); // 画像の欄の広さが変わるので、表示し直す
+    }
+
     void Fullscreen_Click(object? sender, RoutedEventArgs e) => ToggleFullscreen();
 
     void ToggleFullscreen()
@@ -41,12 +79,13 @@ public partial class MainWindow
         prevViewportBackground = Viewport.Background;
         isFullscreen = true;
 
-        MainMenu.IsVisible = FilterRow.IsVisible = StatusBar.IsVisible = false;
+        MainMenu.IsVisible = PathRow.IsVisible = FilterRow.IsVisible = StatusBar.IsVisible = false;
         LeftPanel.IsVisible = RightPanel.IsVisible = Split1.IsVisible = Split2.IsVisible = false;
         LeftCol.MinWidth = RightCol.MinWidth = 0;
         LeftCol.Width = RightCol.Width = SplitCol1.Width = SplitCol2.Width = new GridLength(0);
         Viewport.Background = Brushes.Black;
         FullscreenButton.Content = "全画面を終了";
+        InfoPanelButton.IsVisible = false;
 
         WindowState = WindowState.FullScreen;
         Dispatcher.UIThread.Post(ApplyViewMode, DispatcherPriority.Loaded);
@@ -58,6 +97,7 @@ public partial class MainWindow
         WindowState = prevState == WindowState.FullScreen ? WindowState.Normal : prevState;
 
         MainMenu.IsVisible = FilterRow.IsVisible = StatusBar.IsVisible = true;
+        PathRow.IsVisible = settings.ShowPathBar;
         LeftPanel.IsVisible = RightPanel.IsVisible = Split1.IsVisible = Split2.IsVisible = true;
         LeftCol.MinWidth = prevLeftMin;
         RightCol.MinWidth = prevRightMin;
@@ -67,6 +107,8 @@ public partial class MainWindow
         SplitCol2.Width = prevSplit2Width;
         Viewport.Background = prevViewportBackground;
         FullscreenButton.Content = "全画面";
+        InfoPanelButton.IsVisible = true;
+        ApplyInfoPanel(); // 右のパネルを隠していたら、隠したままにする
 
         Dispatcher.UIThread.Post(ApplyViewMode, DispatcherPriority.Loaded);
     }

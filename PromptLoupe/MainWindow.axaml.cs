@@ -88,6 +88,11 @@ public partial class MainWindow : Window
         FileList.ItemsSource = shown;
         ShowMeta(null, null);
         LoadSavedTagDictionary();
+        SetupPathBar();
+        SetupFolderTree();
+        InfoPanelMenu.InputGesture = new KeyGesture(Key.I, CommandKey);
+        ApplyInfoPanel();
+        ApplyViewControls();
 
         AddHandler(KeyDownEvent, Window_KeyDown, RoutingStrategies.Tunnel);
         AddHandler(DragDrop.DragOverEvent, Window_DragOver);
@@ -98,6 +103,9 @@ public partial class MainWindow : Window
         Viewport.PointerMoved += Viewport_PointerMoved;
         Viewport.PointerReleased += Viewport_PointerReleased;
         Viewport.SizeChanged += (_, _) => UpdateZoomText();
+
+        Task.Run(ArchiveStore.CleanupStale); // 前回までに残った、書庫の一時ファイル
+        Closed += (_, _) => ArchiveStore.CloseAll(wait: true);
 
         initializing = false;
         Opened += (_, _) =>
@@ -195,42 +203,86 @@ public partial class MainWindow : Window
     void OpenPath(string path)
     {
         if (Directory.Exists(path)) OpenFolder(path, null);
+        else if (ArchivePath.IsArchiveFile(path)) OpenFolder(path, null); // 書庫はフォルダと同じように開く
+        else if (ArchivePath.TrySplit(path, out var archive, out _)) OpenFolder(archive, path); // 書庫の中の画像
         else if (File.Exists(path)) OpenFolder(Path.GetDirectoryName(Path.GetFullPath(path))!, Path.GetFullPath(path));
     }
+
+    /// <summary>開けるフォルダか書庫か。</summary>
+    static bool CanOpenFolder(string path) => Directory.Exists(path) || ArchivePath.IsArchiveFile(path);
+
+    /// <summary>いま開いているのが書庫か。</summary>
+    bool currentIsArchive;
+
+    /// <summary>ステータスバーの件数のあとに添える注意(書庫のパスワード付きの画像・中の書庫の数)。</summary>
+    string folderNote = "";
+
+    /// <summary>書庫を開けなかったときの説明(SharpCompress の英語のメッセージを、分かるものだけ日本語にする)。</summary>
+    static string ArchiveError(Exception ex) =>
+        ex is System.Security.Cryptography.CryptographicException
+        || ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("encrypted", StringComparison.OrdinalIgnoreCase)
+            ? "パスワード付きの書庫には対応していません"
+            : ex.Message;
 
     async void OpenFolder(string folder, string? select)
     {
         scanCts?.Cancel();
         int seq = ++folderSeq;
+        try { folder = FolderPath.Normalize(folder); } catch { } // 末尾の区切り文字などをそろえる(履歴やツリーとの比較のため)
+        string? previousFolder = currentFolder;
         currentFolder = folder;
+        bool isArchive = currentIsArchive = ArchivePath.IsArchiveFile(folder);
+        folderNote = "";
+        OnFolderChanging(previousFolder, folder); // 移動の履歴、パスの欄、フォルダツリー
         int depth = settings.SubfolderDepth;
-        Status.Text = "フォルダを読み込み中…";
+        Status.Text = isArchive ? "書庫を読み込み中…" : "フォルダを読み込み中…";
 
         List<FileItem> files;
+        ArchiveListing? listing = null;
         try
         {
-            files = await Task.Run(() =>
-                EnumerateImages(folder, depth)
-                    .Select(p => new FileItem(p, folder))
-                    .ToList());
+            if (isArchive)
+            {
+                // 書庫の中は、サブフォルダの深さに関係なく、すべての画像を出す(中の書庫は開かない)
+                listing = await Task.Run(() => ArchiveStore.Open(folder, IsImage));
+                files = listing.Images.Select(e => new FileItem(folder, e)).ToList();
+            }
+            else
+            {
+                ArchiveStore.CloseAll(); // 前に開いていた書庫の一時ファイルを消す
+                files = await Task.Run(() =>
+                    EnumerateImages(folder, depth)
+                        .Select(p => new FileItem(p, folder))
+                        .ToList());
+            }
         }
         catch (Exception ex)
         {
-            if (seq == folderSeq) Status.Text = "フォルダを開けません: " + ex.Message;
+            if (seq == folderSeq)
+            {
+                SetItems(new List<FileItem>());
+                ClearImage();
+                Status.Text = isArchive ? "書庫を開けません: " + ArchiveError(ex) : "フォルダを開けません: " + ex.Message;
+            }
             return;
         }
         if (seq != folderSeq) return; // 別のフォルダが開かれた
 
         SetItems(files);
-        StartWatcher(folder, depth); // ほかのアプリでの移動・削除・名前変更を、一覧に反映する
+        if (isArchive) StopWatcher();
+        else StartWatcher(folder, depth); // ほかのアプリでの移動・削除・名前変更を、一覧に反映する
 
-        Title = $"PromptLoupe - {folder}" + depth switch
+        Title = $"PromptLoupe - {folder}" + (isArchive ? "" : depth switch
         {
             0 => "",
             < 0 => "(サブフォルダ: 無制限)",
             _ => $"(サブフォルダ: {depth}階層まで)"
-        };
-        Status.Text = $"{files.Count} 枚の画像";
+        });
+        if (listing != null)
+            folderNote = (listing.Encrypted > 0 ? $"(パスワード付きで表示できない画像: {listing.Encrypted} 枚)" : "") +
+                         (listing.Archives > 0 ? $"(中の書庫 {listing.Archives} 個は開きません)" : "");
+        Status.Text = $"{files.Count} 枚の画像" + folderNote;
 
         if (files.Count == 0)
         {
@@ -295,7 +347,7 @@ public partial class MainWindow : Window
                 RefreshView();
                 NotifyTagStats();
                 int withMeta = files.Count(f => f.Meta?.HasData == true);
-                Status.Text = $"{total} 枚(うちAI生成メタデータあり: {withMeta})";
+                Status.Text = $"{total} 枚(うちAI生成メタデータあり: {withMeta})" + folderNote;
             });
         });
     }
@@ -479,7 +531,9 @@ public partial class MainWindow : Window
     {
         FileInfoText.Text = item == null
             ? ""
-            : $"{item.Name}\n{item.Modified:yyyy/MM/dd HH:mm:ss}  ・  {item.Size / 1024.0:N0} KB";
+            : $"{item.Name}\n{item.Modified:yyyy/MM/dd HH:mm:ss}  ・  {item.Size / 1024.0:N0} KB" +
+              (item.InArchive && ArchivePath.TrySplit(item.Path, out var archive, out _)
+                  ? $"\n書庫: {Path.GetFileName(archive)}" : "");
 
         if (m == null)
         {
@@ -645,14 +699,41 @@ public partial class MainWindow : Window
             BuildChips(chips, c.Prompt);
             CharactersPanel.Children.Add(chips);
 
-            if (!string.IsNullOrWhiteSpace(c.Negative))
+            bool hasNegative = !string.IsNullOrWhiteSpace(c.Negative);
+            if (hasNegative)
             {
                 CharactersPanel.Children.Add(MakeHeader("ネガティブ", c.Negative, false));
                 var negChips = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
                 BuildChips(negChips, c.Negative);
                 CharactersPanel.Children.Add(negChips);
             }
+
+            CharactersPanel.Children.Add(MakeCharacterFullText(c.Prompt, hasNegative ? c.Negative : null));
         }
+    }
+
+    /// <summary>
+    /// キャラクターの「全文を表示」(プロンプトとネガティブを1つの欄に。ネガティブの前に見出しを置いて、境目が分かるようにする)。
+    /// 最初は閉じておく。
+    /// </summary>
+    static Expander MakeCharacterFullText(string? prompt, string? negative)
+    {
+        var body = new StackPanel { Spacing = 2 };
+        if (negative != null)
+            body.Children.Add(new TextBlock { Text = "プロンプト", Classes = { "header" } });
+        body.Children.Add(new SelectableTextBlock { Text = prompt ?? "", TextWrapping = TextWrapping.Wrap });
+        if (negative != null)
+        {
+            body.Children.Add(new TextBlock { Text = "ネガティブ", Classes = { "header" }, Margin = new Thickness(0, 10, 0, 0) });
+            body.Children.Add(new SelectableTextBlock { Text = negative, TextWrapping = TextWrapping.Wrap });
+        }
+        return new Expander
+        {
+            Header = "全文を表示",
+            Margin = new Thickness(0, 6, 0, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Content = new ScrollViewer { MaxHeight = 240, Content = body },
+        };
     }
 
     DockPanel MakeHeader(string title, string? copyText, bool bold)
@@ -805,6 +886,22 @@ public partial class MainWindow : Window
     }
 
     void Fit_Click(object? sender, RoutedEventArgs e) => SetFitMode();
+
+    /// <summary>画像の右下の操作を最小化 / 展開する(状態は保存)。</summary>
+    void ViewControls_Toggle(object? sender, RoutedEventArgs e)
+    {
+        settings.ViewControlsCollapsed = !settings.ViewControlsCollapsed;
+        settings.Save();
+        ApplyViewControls();
+    }
+
+    void ApplyViewControls()
+    {
+        bool collapsed = settings.ViewControlsCollapsed;
+        ViewControls.IsVisible = !collapsed;
+        ViewControlsToggle.Content = collapsed ? "◂" : "▸";
+        ToolTip.SetTip(ViewControlsToggle, collapsed ? "表示倍率とボタンを表示" : "表示倍率とボタンを最小化");
+    }
     void Actual_Click(object? sender, RoutedEventArgs e) => SetActualMode();
 
     // ───────────────────── 操作 ─────────────────────
@@ -827,10 +924,10 @@ public partial class MainWindow : Window
             AllowMultiple = false,
             FileTypeFilter = new[]
             {
-                new FilePickerFileType("画像ファイル")
+                new FilePickerFileType("画像ファイル・書庫")
                 {
-                    Patterns = ImageExts.Select(x => "*" + x).ToArray(),
-                    AppleUniformTypeIdentifiers = new[] { "public.image" },
+                    Patterns = ImageExts.Concat(new[] { ".zip", ".cbz", ".rar", ".cbr", ".7z", ".cb7" }).Select(x => "*" + x).ToArray(),
+                    AppleUniformTypeIdentifiers = new[] { "public.image", "public.archive" },
                     MimeTypes = new[] { "image/*" },
                 },
                 FilePickerFileTypes.All,
@@ -904,10 +1001,17 @@ public partial class MainWindow : Window
     void SubfolderDepth_Click(object? sender, RoutedEventArgs e)
     {
         if (sender is not MenuItem mi || !int.TryParse(mi.Tag?.ToString(), out int depth)) return;
+        SetSubfolderDepth(depth);
+    }
 
+    /// <summary>サブフォルダを読み込む深さを変える(メニューと、フォルダツリーの上の選択欄から)。</summary>
+    void SetSubfolderDepth(int depth)
+    {
+        CheckOnly(SubfolderMenu, depth.ToString());
+        if (settings.SubfolderDepth == depth) return;
         settings.SubfolderDepth = depth;
         settings.Save();
-        CheckOnly(SubfolderMenu, depth.ToString());
+        SelectDepthBox();
 
         // 開いているフォルダを新しい設定で読み込み直す(表示中の画像は維持)
         if (currentFolder != null) OpenFolder(currentFolder, currentItem?.Path);
@@ -960,7 +1064,7 @@ public partial class MainWindow : Window
         await MessageDialog.Show(this,
             $"PromptLoupe\nバージョン {version}\n{copyright}(MIT License)\n\n" +
             "AI生成画像のメタデータを元に、並び替え・絞り込みして閲覧できる画像ビューア\n\n" +
-            $"使用ライブラリ: Avalonia {avalonia}、SkiaSharp(どちらも MIT License)、LibTiff.Net(BSD License)など\n" +
+            $"使用ライブラリ: Avalonia {avalonia}、SkiaSharp(どちらも MIT License)、LibTiff.Net(BSD License)、SharpCompress(MIT License)など\n" +
             "ライセンス文は、メニューの「ヘルプ → ライセンス」で読めます。\n\n" +
             $"{RuntimeInformation.FrameworkDescription}  ・  {RuntimeInformation.OSDescription}",
             "バージョン情報");
@@ -1028,15 +1132,28 @@ public partial class MainWindow : Window
             e.Handled = true;
             return;
         }
+        if (mod == cmd && e.Key == Key.I && !isFullscreen)
+        {
+            ToggleInfoPanel();
+            e.Handled = true;
+            return;
+        }
         if (e.Key == Key.Escape && isFullscreen)
         {
             ExitFullscreen();
             e.Handled = true;
             return;
         }
+        if (!isFullscreen && HandleNavigationKey(e)) // 戻る・進む・上へ・パスの入力
+        {
+            e.Handled = true;
+            return;
+        }
 
         var focused = FocusManager?.GetFocusedElement();
         if (focused is TextBox) return;
+        // フォルダツリーにいるときは、矢印キーなどをツリーの操作に任せる。ファイル操作のキーも、一覧のファイルに効かないようにする
+        if (focused is Visual fv && (fv == FolderTree || FolderTree.IsVisualAncestorOf(fv))) return;
         // 右パネルの文字を選んでいるときの Ctrl+C は、その文字のコピーに任せる
         if (focused is SelectableTextBlock { SelectedText.Length: > 0 } && mod == cmd && e.Key == Key.C) return;
 

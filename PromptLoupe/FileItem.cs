@@ -12,17 +12,39 @@ public sealed class FileItem : INotifyPropertyChanged
     public FileItem(string path, string rootFolder)
     {
         Path = path;
+        Name = System.IO.Path.GetFileName(path);
         Display = System.IO.Path.GetRelativePath(rootFolder, path);
+        string? dir = System.IO.Path.GetDirectoryName(Display);
+        FolderPart = string.IsNullOrEmpty(dir) ? "" : dir + System.IO.Path.DirectorySeparatorChar;
         var fi = new FileInfo(path);
         Modified = fi.LastWriteTime;
         Size = fi.Length;
     }
 
+    /// <summary>書庫の中の画像(Path は「書庫のパス|中の名前」。<see cref="ArchivePath"/>)。</summary>
+    public FileItem(string archive, ArchiveEntryInfo entry)
+    {
+        Path = ArchivePath.Combine(archive, entry.Key);
+        Name = System.IO.Path.GetFileName(entry.Key);
+        Display = entry.Key.Replace('/', System.IO.Path.DirectorySeparatorChar);
+        string? dir = System.IO.Path.GetDirectoryName(Display);
+        FolderPart = string.IsNullOrEmpty(dir) ? "" : dir + System.IO.Path.DirectorySeparatorChar;
+        Modified = entry.Modified;
+        Size = entry.Size;
+        InArchive = true;
+    }
+
     public string Path { get; }
-    public string Name => System.IO.Path.GetFileName(Path);
+
+    /// <summary>書庫の中の画像か(名前の変更・削除・ファイルのコピーなどはできない)。</summary>
+    public bool InArchive { get; }
+    public string Name { get; } = "";
 
     /// <summary>開いたフォルダからの相対パス(サブフォルダ読み込み時にフォルダ構成が分かるように)。</summary>
     public string Display { get; }
+
+    /// <summary>Display のうちフォルダの部分(「人物/」など。開いたフォルダの直下の画像なら空)。一覧で色を変えて出す。</summary>
+    public string FolderPart { get; }
     public DateTime Modified { get; }
     public long Size { get; }
 

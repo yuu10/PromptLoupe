@@ -40,6 +40,9 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
   - PNG・JPEG・WebP・BMP・GIF は SkiaSharp、TIFF は LibTiff.Net で読む(どの OS でも。WebP も拡張機能なしで表示できる)
   - HEIC は OS の機能で読む: Windows は WIC(「HEIF 画像拡張機能」と「HEVC ビデオ拡張機能」が必要)、Mac は ImageIO、Linux はその PC の libheif と HEVC のプラグイン。HEVC のデコーダーは LGPL などで exe に入れられないため、同梱していない
   - 前後の画像を先読みしておき、送ったときにすぐ表示する
+- 書庫(zip・rar・7z。cbz・cbr・cb7 も)の中の画像を、展開せずに閲覧。書庫はフォルダと同じように開く(ドロップ・「ファイル → 画像・書庫を開く」・フォルダツリー・パスの欄)。書庫の中のフォルダは `フォルダ名/` を色分けして表示。中の書庫は開かない。フォルダを開いたときに、中の書庫の画像は含めない。名前が文字化けして拡張子が壊れた書庫(拡張子なし、または英数字以外の拡張子)は、ファイルの先頭の印(zip・rar・7z)で書庫と判断する
+  - SharpCompress で読み、表示する画像は一時フォルダに取り出す(別のフォルダを開くか、終了すると消す)。ソリッド形式の rar・7z は、開いたときに先頭から順に取り出す(後ろのほうの画像は待つことがある)
+  - 書庫の中の画像は、名前の変更・削除・ファイルのコピーなどはできない。パスワード付きの書庫は非対応
 - 撮影情報(Exif): JPEG・WebP・HEIC の EXIF から、カメラ・レンズ・撮影日時・絞り・シャッター速度・ISO 感度・焦点距離・露出補正・撮影モード・フラッシュ・ホワイトバランスを右パネルに表示
   - GPS の位置情報は、初期設定では「記録あり」とだけ表示。メニュー「設定 → 撮影情報の位置情報(GPS)を表示する」で緯度・経度・標高を表示
 - フォルダ内閲覧(←→ / PageUp・PageDown / Home・End)、ドラッグ&ドロップ、コマンドライン引数、「このアプリで開く」に対応
@@ -47,7 +50,9 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
   - PNG の tEXt / iTXt / zTXt、JPEG・WebP の EXIF UserComment
   - 上記以外のツールでも、`prompt` / `negative_prompt` / `seed` などの一般的な名前の項目を持つ JSON なら、汎用的に読み取る(「不明なツール(JSON: …)」と表示)
   - PixAI は非対応(ダウンロードした画像にプロンプトなどの情報が入っていないため)
-- サブフォルダ読み込み: メニュー「設定 → サブフォルダの読み込み」で深さを選択(含めない / 1〜3階層まで / 無制限。既定は含めない)
+- サブフォルダ読み込み: フォルダツリーの上の「サブフォルダ」か、メニュー「設定 → サブフォルダの読み込み」で深さを選択(含めない / 1〜3階層まで / 無制限。既定は含めない)。一覧ではファイル名の前のフォルダ名を別の色で表示。右クリックの「画像のあるフォルダへ移動」で、その画像のフォルダを開く
+- フォルダのパス(絞り込み欄の上): フォルダ名のクリックで移動、空いたところのクリック(Ctrl+L / Alt+D)で手入力。戻る・進む・親フォルダへ(Alt+← / Alt+→ / Alt+↑、マウスの戻る・進むボタン)。メニュー「設定 → フォルダのパスを表示」で隠せる
+- フォルダツリー(左パネルの上): よく使う場所とドライブから、フォルダを選んで開く。開いているフォルダは、ツリーでも開いて選んだ状態にする。最小化と高さの変更ができる(保存)。画像の枚数は数えない
 - サムネイル: ファイル一覧に表示(メニュー「設定 → サムネイルを表示」でON/OFF)。画面に見えている分だけバックグラウンドで生成し、メモリ上にのみ保持(最大600枚、ディスクには保存しません)
 - バージョン情報: メニュー「ヘルプ → バージョン情報」(バージョンは `PromptLoupe/PromptLoupe.csproj` の `<Version>` で管理)
 - ライセンス: メニュー「ヘルプ → ライセンス」(ライセンス文は exe に入っている)
@@ -69,6 +74,9 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
   - 一覧の画像を、エクスプローラーや他のアプリへドラッグ&ドロップで持ち出せる(既定はコピー、Shift を押しながらで移動。Windows・Mac のみ。Linux は Avalonia 11.3 が対応していない)。外からのドロップは、そのファイル/フォルダを開く
   - 開いているフォルダの画像が、ほかのアプリで移動・削除・名前変更されたら、一覧にも反映する(切り取ってエクスプローラーに貼り付けたときなど)。新しく増えた画像は、開き直すと出る
 - 全画面表示(F11 / メニュー「表示」/ 画像右下のボタン。Esc で戻る)
+- 右のパネル(プロンプトなど)を隠す / 出す(Ctrl+I / メニュー「表示」/ 画像右下のボタン。状態は保存)
+- 画像右下の表示倍率とボタンは、右端の ▸ で最小化できる(状態は保存)
+- キャラクター別プロンプトにも「全文を表示」(プロンプトとネガティブを1つの欄に、見出しで区切って表示)
 - タグの色分け: Danbooru のタグ辞書(`danbooru.csv`、利用者が用意)で、一般 / アーティスト / 作品名 / キャラクター名 / メタ を色分け。`<lora:…>` などは辞書なしで色分け。メニュー「設定 → タグの色分け」で辞書を読み込む(設定と同じフォルダに `danbooru.csv` として保存。アプリには同梱しない)。辞書は現時点では [a1111-sd-webui-tagcomplete の danbooru.csv](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/blob/main/tags/danbooru.csv) を推奨(同じ場所の e621.csv などは分類の番号が違うため不可)
 - タグの集計(メニュー「表示 → タグの集計」/ Ctrl+T): タグごとに、使っている画像の枚数と割合を一覧にする
   - 集計するプロンプト(プロンプト / ネガティブ / キャラクター別)、範囲(一覧に表示中の画像 / フォルダのすべて)を選択。列の見出しのクリックで並び替え(もう一度で昇順/降順を切り替え)。条件は保存
@@ -90,7 +98,10 @@ PromptLoupe の exe にはコード署名をしていません。そのため、
 | Delete(Mac は ⌘+Delete も) | ごみ箱へ移動(設定で許可しているとき) |
 | Ctrl+Shift+C | ファイルのパスをコピー |
 | Ctrl+T | タグの集計 |
+| Ctrl+I | 右のパネルを隠す / 出す |
 | Alt+Enter | プロパティ(Windows のみ) |
+| Alt+← / Alt+→ / Alt+↑(Mac は ⌘[ / ⌘] / ⌘↑) | 前のフォルダに戻る / 進む / 親フォルダへ |
+| Ctrl+L / Alt+D | フォルダのパスを入力 |
 | F1 | 使い方 |
 
 ## ビルドと実行
@@ -134,6 +145,8 @@ main と `claude/` のブランチへのプッシュ、PR のたびに、GitHub 
 - `MainWindow.FileOps.cs` — ファイル操作とドラッグ&ドロップ(持ち出し)
 - `MainWindow.Watcher.cs` — 開いているフォルダの見張り(ほかのアプリでの移動・削除・名前変更を一覧に反映)
 - `MainWindow.Fullscreen.cs` — 全画面表示
+- `MainWindow.PathBar.cs` — フォルダのパスの欄(パンくず・手入力)と、戻る・進む・親フォルダへ
+- `MainWindow.FolderTree.cs` — フォルダツリー
 - `MainWindow.Tags.cs` — タグの色分け
 - `MainWindow.TagStats.cs` / `TagStatsWindow.axaml(.cs)` — タグの集計
 - `FileItem.cs` — 一覧の項目と並び替え
@@ -157,6 +170,8 @@ main と `claude/` のブランチへのプッシュ、PR のたびに、GitHub 
 - `PromptText.cs` — 検索用の正規化、プロンプトのタグへの分割
 - `NaturalComparer.cs` — 自然順(img2 が img10 より前)の比較
 - `FileChanges.cs` — ほかのアプリでの移動・削除・名前変更の通知を、一覧の変更に読み替える
+- `FolderPath.cs` — パスの分割(パンくず)・比較・手入力の解釈
+- `ArchivePath.cs` / `ArchiveStore.cs` — 書庫の中の画像のパス(`書庫|中の名前`)と、書庫の読み込み・一時フォルダへの取り出し(SharpCompress)
 - `AppSettings.cs` — 設定の保存
 - `TagDictionary.cs` — タグ辞書の読み込み
 
@@ -170,7 +185,7 @@ PromptLoupe は [MIT License](LICENSE) で配布しています(Copyright (c) 20
 
 ### 使用ライブラリ
 
-Avalonia(MIT)・SkiaSharp・HarfBuzzSharp(MIT)・MicroCom.Runtime(MIT)・Tmds.DBus.Protocol(MIT)・ANGLE(BSD 3-Clause)・LibTiff.Net(BSD 3-Clause)と、SkiaSharp に含まれる Skia などのライブラリを使っています。ライセンス文は [PromptLoupe/THIRD-PARTY-NOTICES.txt](PromptLoupe/THIRD-PARTY-NOTICES.txt) にあり、`LICENSE` とともに exe に埋め込んで、アプリの「ヘルプ → ライセンス」で表示します。
+Avalonia(MIT)・SkiaSharp・HarfBuzzSharp(MIT)・MicroCom.Runtime(MIT)・Tmds.DBus.Protocol(MIT)・ANGLE(BSD 3-Clause)・LibTiff.Net(BSD 3-Clause)・SharpCompress(MIT。RAR の展開部分は UnRAR のライセンスに従う)と、SkiaSharp に含まれる Skia などのライブラリを使っています。ライセンス文は [PromptLoupe/THIRD-PARTY-NOTICES.txt](PromptLoupe/THIRD-PARTY-NOTICES.txt) にあり、`LICENSE` とともに exe に埋め込んで、アプリの「ヘルプ → ライセンス」で表示します。
 
 ## 既知の制限
 

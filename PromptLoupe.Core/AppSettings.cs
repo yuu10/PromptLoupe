@@ -38,6 +38,21 @@ public sealed class AppSettings
     /// <summary>ファイル一覧にサムネイルを表示する。</summary>
     public bool ShowThumbnails { get; set; } = true;
 
+    /// <summary>画像の右下の操作(表示倍率・フィット・100%・パネル・全画面)を最小化している。</summary>
+    public bool ViewControlsCollapsed { get; set; } = false;
+
+    /// <summary>右のパネル(プロンプト・パラメーターなどのカード)を表示する。</summary>
+    public bool ShowInfoPanel { get; set; } = true;
+
+    /// <summary>絞り込み欄の上に、開いているフォルダのパス(パンくず)を表示する。</summary>
+    public bool ShowPathBar { get; set; } = true;
+
+    /// <summary>左パネルのフォルダツリーを最小化している。</summary>
+    public bool FolderTreeCollapsed { get; set; } = false;
+
+    /// <summary>左パネルのフォルダツリーの高さ(ピクセル。一覧との境目をドラッグで変えられる)。</summary>
+    public double FolderTreeHeight { get; set; } = 250;
+
     // 絞り込みの検索対象(既定はすべてON)
     public bool FilterFileName { get; set; } = true;
     public bool FilterPrompt { get; set; } = true;
