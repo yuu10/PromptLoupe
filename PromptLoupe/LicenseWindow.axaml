@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="PromptLoupe.LicenseWindow"
+        Title="PromptLoupe - ライセンス" Icon="avares://PromptLoupe/Assets/app.ico"
+        Width="760" Height="720" MinWidth="480" MinHeight="360"
+        WindowStartupLocation="CenterOwner">
+    <!--
+      ライセンス文(PromptLoupe の LICENSE と、使っているソフトウェアの THIRD-PARTY-NOTICES.txt)。
+      どちらも exe に埋め込んであり、配布物に別ファイルとして置かない(LicenseWindow.axaml.cs)。
+    -->
+    <DockPanel Margin="16">
+        <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,10"
+                   Text="PromptLoupe のライセンスと、PromptLoupe が使っているソフトウェアのライセンスです。" />
+        <TabControl>
+            <TabItem Header="PromptLoupe">
+                <TextBox x:Name="LicenseText" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                         FontFamily="Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12" />
+            </TabItem>
+            <TabItem Header="使用しているソフトウェア">
+                <TextBox x:Name="NoticesText" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                         FontFamily="Consolas,Menlo,DejaVu Sans Mono,monospace" FontSize="12" />
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

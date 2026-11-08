@@ -186,7 +186,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            Status.Text = "画像をコピーできませんでした: " + ex.Message + ImageLoader.UnsupportedHint(item.Path);
+            Status.Text = "画像をコピーできませんでした: " + ex.Message + ImageLoader.UnsupportedHint(ex);
         }
     }
 

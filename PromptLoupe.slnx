@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="PromptLoupe.Core/PromptLoupe.Core.csproj" />
+  <Project Path="PromptLoupe.Tests/PromptLoupe.Tests.csproj" />
+  <Project Path="PromptLoupe/PromptLoupe.csproj" />
+</Solution>

@@ -155,6 +155,7 @@
             <MenuItem Header="ヘルプ(_H)">
                 <MenuItem Header="使い方(_M)..." InputGesture="F1" Click="Help_Click" />
                 <Separator />
+                <MenuItem Header="ライセンス(_L)..." Click="License_Click" />
                 <MenuItem Header="バージョン情報(_A)..." Click="About_Click" />
             </MenuItem>
         </Menu>

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Avalonia 版(Windows・Mac・Linux)。開発中。WPF 版(ルートの PromptLoupe.csproj)と同じ機能になるまで、並べて置く。
+    PromptLoupe 本体(Windows・Mac・Linux。Avalonia)。2.0.0 で WPF 版(Windows 専用、1.x)から置き換えた。
     共通部分(メタデータの読み取り・設定・タグ辞書)は PromptLoupe.Core を使う。
   -->
   <PropertyGroup>
@@ -12,13 +12,15 @@
     <AssemblyName>PromptLoupe</AssemblyName>
     <RootNamespace>PromptLoupe</RootNamespace>
     <ApplicationIcon>../app.ico</ApplicationIcon>
-    <Version>1.6.0</Version>
+    <Version>2.0.0</Version>
     <Product>PromptLoupe</Product>
     <Authors>yuto</Authors>
     <Copyright>Copyright (c) 2026 yuto</Copyright>
     <!-- XAML のバインディングを、コンパイル時に型で確かめる -->
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+    <!-- HEIC を OS の機能(Windows の WIC、Mac の ImageIO、Linux の libheif)で読むところで、ポインターを使う(HeifLoader.cs) -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,11 +38,11 @@
 
   <ItemGroup>
     <!--
-      配布物に同梱するライセンス文(ビルド・発行の出力先にコピーする)。
-      ルートの THIRD-PARTY-NOTICES.txt は WPF 版用(ModernWpfUI)なので入れない。
-      Avalonia 版を配布する前に、Avalonia・SkiaSharp などの表記をまとめた文書を作る(CLAUDE.md の「次にやること」)
+      ライセンス文。exe に埋め込み、アプリの「ヘルプ → ライセンス」で表示する(LicenseWindow)。配布物は exe だけにするため。
+      パッケージを足したり、バージョンを変えたりしたら、THIRD-PARTY-NOTICES.txt も直す
     -->
-    <None Include="../LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="../LICENSE" LogicalName="PromptLoupe.LICENSE.txt" />
+    <EmbeddedResource Include="THIRD-PARTY-NOTICES.txt" LogicalName="PromptLoupe.THIRD-PARTY-NOTICES.txt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,6 +50,11 @@
     <PackageReference Include="Avalonia" Version="11.3.22" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <!--
+      TIFF の読み込み(どの OS でも)。C# だけで書かれているので exe に入る。BSD ライセンス。
+      HEIC は同梱の部品を使わず、OS の機能で読む(HeifLoader.cs)。HEVC のデコーダーは LGPL などで、exe に入れられないため
+    -->
+    <PackageReference Include="BitMiracle.LibTiff.NET" Version="2.4.660" />
   </ItemGroup>
 
 </Project>
