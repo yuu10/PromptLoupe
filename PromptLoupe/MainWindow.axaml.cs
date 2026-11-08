@@ -92,6 +92,7 @@ public partial class MainWindow : Window
         SetupFolderTree();
         InfoPanelMenu.InputGesture = new KeyGesture(Key.I, CommandKey);
         ApplyInfoPanel();
+        ApplyViewControls();
 
         AddHandler(KeyDownEvent, Window_KeyDown, RoutingStrategies.Tunnel);
         AddHandler(DragDrop.DragOverEvent, Window_DragOver);
@@ -839,6 +840,22 @@ public partial class MainWindow : Window
     }
 
     void Fit_Click(object? sender, RoutedEventArgs e) => SetFitMode();
+
+    /// <summary>画像の右下の操作を最小化 / 展開する(状態は保存)。</summary>
+    void ViewControls_Toggle(object? sender, RoutedEventArgs e)
+    {
+        settings.ViewControlsCollapsed = !settings.ViewControlsCollapsed;
+        settings.Save();
+        ApplyViewControls();
+    }
+
+    void ApplyViewControls()
+    {
+        bool collapsed = settings.ViewControlsCollapsed;
+        ViewControls.IsVisible = !collapsed;
+        ViewControlsToggle.Content = collapsed ? "◂" : "▸";
+        ToolTip.SetTip(ViewControlsToggle, collapsed ? "表示倍率とボタンを表示" : "表示倍率とボタンを最小化");
+    }
     void Actual_Click(object? sender, RoutedEventArgs e) => SetActualMode();
 
     // ───────────────────── 操作 ─────────────────────

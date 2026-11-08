@@ -38,6 +38,9 @@ public sealed class AppSettings
     /// <summary>ファイル一覧にサムネイルを表示する。</summary>
     public bool ShowThumbnails { get; set; } = true;
 
+    /// <summary>画像の右下の操作(表示倍率・フィット・100%・パネル・全画面)を最小化している。</summary>
+    public bool ViewControlsCollapsed { get; set; } = false;
+
     /// <summary>右のパネル(プロンプト・パラメーターなどのカード)を表示する。</summary>
     public bool ShowInfoPanel { get; set; } = true;
 
