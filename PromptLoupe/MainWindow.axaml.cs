@@ -1152,8 +1152,18 @@ public partial class MainWindow : Window
 
         var focused = FocusManager?.GetFocusedElement();
         if (focused is TextBox) return;
-        // フォルダツリーにいるときは、矢印キーなどをツリーの操作に任せる。ファイル操作のキーも、一覧のファイルに効かないようにする
-        if (focused is Visual fv && (fv == FolderTree || FolderTree.IsVisualAncestorOf(fv))) return;
+        // フォルダツリーにいるときは、方向キーなどでツリーの選択(=フォルダの移動)を動かさず、画像の切り替えに使う。
+        // ファイル操作のキーは、一覧のファイルに効かないようにする
+        if (focused is Visual fv && (fv == FolderTree || FolderTree.IsVisualAncestorOf(fv)))
+        {
+            if (!IsImageMoveKey(e.Key)) return;
+            e.Handled = true; // 修飾キー付きでもツリーには渡さない
+            if (mod != KeyModifiers.None) return;
+            if (e.Key == Key.Up) Move(-1);
+            else if (e.Key == Key.Down) Move(1);
+            else MoveByKey(e.Key);
+            return;
+        }
         // 右パネルの文字を選んでいるときの Ctrl+C は、その文字のコピーに任せる
         if (focused is SelectableTextBlock { SelectedText.Length: > 0 } && mod == cmd && e.Key == Key.C) return;
 
@@ -1177,20 +1187,13 @@ public partial class MainWindow : Window
         // Shift / Ctrl / Alt を押しているときは、一覧の範囲選択などに任せる
         if (mod != KeyModifiers.None) return;
 
+        if (MoveByKey(e.Key))
+        {
+            e.Handled = true;
+            return;
+        }
         switch (e.Key)
         {
-            case Key.Right:
-            case Key.PageDown:
-            case Key.Space:
-                Move(1); break;
-            case Key.Left:
-            case Key.PageUp:
-            case Key.Back:
-                Move(-1); break;
-            case Key.Home:
-                Move(-int.MaxValue / 2); break;
-            case Key.End:
-                Move(int.MaxValue / 2); break;
             case Key.F:
                 SetFitMode(); break;
             case Key.D1:
@@ -1200,5 +1203,31 @@ public partial class MainWindow : Window
                 return;
         }
         e.Handled = true;
+    }
+
+    // フォルダツリーにフォーカスがあるときに、ツリーへ渡さず画像の切り替えに使うキー
+    static bool IsImageMoveKey(Key key) => key is Key.Up or Key.Down or Key.Left or Key.Right
+        or Key.PageUp or Key.PageDown or Key.Home or Key.End;
+
+    // 画像を切り替えるキー(前後・先頭・末尾)。切り替えたら true
+    bool MoveByKey(Key key)
+    {
+        switch (key)
+        {
+            case Key.Right:
+            case Key.PageDown:
+            case Key.Space:
+                Move(1); return true;
+            case Key.Left:
+            case Key.PageUp:
+            case Key.Back:
+                Move(-1); return true;
+            case Key.Home:
+                Move(-int.MaxValue / 2); return true;
+            case Key.End:
+                Move(int.MaxValue / 2); return true;
+            default:
+                return false;
+        }
     }
 }
